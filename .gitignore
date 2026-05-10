@@ -16,6 +16,3 @@ data/reports/*
 !data/indexes/.gitkeep
 !data/reports/.gitkeep
 
-# Course statements and theory PDFs are not part of the repo
-Enunciado del proyecto.pdf
-Teoria/

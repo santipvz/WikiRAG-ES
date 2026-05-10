@@ -17,7 +17,7 @@ class Settings:
         "MITEX_EMBEDDING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     )
     llm_provider: str = os.getenv("MITEX_LLM_PROVIDER", "ollama")
-    ollama_model: str = os.getenv("MITEX_OLLAMA_MODEL", "llama3.1:8b-instruct-q4_K_M")
+    ollama_model: str = os.getenv("MITEX_OLLAMA_MODEL", "gemma3:4b")
     ollama_url: str = os.getenv("MITEX_OLLAMA_URL", "http://localhost:11434")
     top_k: int = int(os.getenv("MITEX_TOP_K", "8"))
     rerank_top_k: int = int(os.getenv("MITEX_RERANK_TOP_K", "5"))
