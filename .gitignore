@@ -1,0 +1,21 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.env
+
+# Local/generated data
+data/raw/*
+data/processed/*
+data/indexes/*
+data/reports/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/indexes/.gitkeep
+!data/reports/.gitkeep
+
+# Course statements and theory PDFs are not part of the repo
+Enunciado del proyecto.pdf
+Teoria/

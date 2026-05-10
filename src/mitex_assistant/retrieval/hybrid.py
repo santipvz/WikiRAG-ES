@@ -1,0 +1,60 @@
+from __future__ import annotations
+
+import numpy as np
+
+from mitex_assistant.data.models import RetrievalResult
+from mitex_assistant.indexing.embeddings import EmbeddingModel
+from mitex_assistant.indexing.vector_store import HybridIndex
+from mitex_assistant.utils.text import strip_prompt_injection
+
+
+def reciprocal_rank_fusion(
+    result_sets: list[list[RetrievalResult]], top_k: int, k: int = 60
+) -> list[RetrievalResult]:
+    by_chunk: dict[str, RetrievalResult] = {}
+    scores: dict[str, float] = {}
+    for results in result_sets:
+        for result in results:
+            by_chunk[result.chunk.chunk_id] = result
+            scores[result.chunk.chunk_id] = scores.get(result.chunk.chunk_id, 0.0) + 1.0 / (k + result.rank)
+    ranked_ids = sorted(scores, key=scores.get, reverse=True)[:top_k]
+    fused: list[RetrievalResult] = []
+    for rank, chunk_id in enumerate(ranked_ids, start=1):
+        base = by_chunk[chunk_id]
+        fused.append(
+            RetrievalResult(
+                chunk=base.chunk,
+                score=float(scores[chunk_id]),
+                source="rrf",
+                rank=rank,
+            )
+        )
+    return fused
+
+
+class HybridRetriever:
+    def __init__(self, index: HybridIndex, embedding_model: EmbeddingModel) -> None:
+        self.index = index
+        self.embedding_model = embedding_model
+
+    def retrieve(self, query: str, top_k: int = 8) -> list[RetrievalResult]:
+        query_embedding = self.embedding_model.encode([query])
+        semantic = self.index.semantic_search(np.asarray(query_embedding), top_k=top_k)
+        lexical = self.index.lexical_search(query, top_k=top_k)
+        return reciprocal_rank_fusion([semantic, lexical], top_k=top_k)
+
+    def build_context(self, results: list[RetrievalResult], max_chars: int = 6000) -> str:
+        blocks: list[str] = []
+        total = 0
+        for result in results:
+            text = strip_prompt_injection(result.chunk.text)
+            block = (
+                f"[Fuente {result.rank}] {result.chunk.metadata.get('title') or result.chunk.source_path}\n"
+                f"Ruta: {result.chunk.source_path}\n"
+                f"Texto: {text}"
+            )
+            if total + len(block) > max_chars:
+                break
+            blocks.append(block)
+            total += len(block)
+        return "\n\n".join(blocks)
