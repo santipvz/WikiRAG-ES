@@ -53,11 +53,11 @@
 Se ha diseñado e implementado un \textbf{asistente documental local} basado en la arquitectura de Recuperación Aumentada por Generación (\textit{Retrieval-Augmented Generation}, RAG). El sistema descarga, normaliza y procesa un corpus masivo real (Wikipedia en español), fragmentándolo en \textit{chunks} y generando representaciones vectoriales densas. A partir de estos datos, construye índices híbridos (FAISS y BM25) y ejecuta modelado de tópicos \textit{offline}, permitiendo a un Agente LLM enrutar y responder consultas complejas en lenguaje natural.
 
 \begin{itemize}
-  \item \textbf{Corpus:} 1\,000\,000 de documentos extraídos de MIRACL-es.
-  \item \textbf{Escala de indexación:} 1\,140\,063 \textit{chunks} procesados e indexados.
+  \item \textbf{Corpus:} 100\,357 documentos de MIRACL-es (subconjunto reproducible; la canalización escala hasta los 10,4 millones disponibles).
+  \item \textbf{Escala de indexación:} 116\,572 \textit{chunks} procesados e indexados.
   \item \textbf{Motor LLM:} \code{gemma4:e4b} operando íntegramente en local a través de Ollama.
-  \item \textbf{Recuperación:} Sistema híbrido que fusiona recuperación semántica (FAISS) y léxica (BM25) mediante \textit{Reciprocal Rank Fusion} (RRF).
-  \item \textbf{Eficiencia:} Implementación paralela de cuantización vectorial (TurboVec) que reduce la huella de memoria RAM en más de un 93\,\%.
+  \item \textbf{Recuperación:} Sistema híbrido que fusiona recuperación semántica (FAISS) y léxica (BM25) mediante \textit{Reciprocal Rank Fusion} (RRF), con \textit{reranking} opcional por \textit{cross-encoder} (MRR 0,71\,$\rightarrow$\,0,82).
+  \item \textbf{Eficiencia:} Índice ANN HNSW ($\approx$16$\times$ más rápido, 99,4\,\% de \textit{recall}) y cuantización vectorial TurboVec que reduce la huella de memoria en un 93,4\,\%.
 \end{itemize}
 
 El desarrollo se ha realizado desde cero en Python, prescindiendo de \textit{frameworks} cerrados (como LangChain) para garantizar un control absoluto sobre el flujo de ejecución, los \textit{prompts} y la evaluación de Recuperación de Información (IR).
@@ -105,10 +105,12 @@ El proyecto se acompaña de los siguientes archivos, listos para su ejecución y
 \rowcolor{tabheader} \textbf{Ruta del archivo o directorio} & \textbf{Contenido y función} \\
 \midrule
 \code{src/mitex\_assistant/} & Código fuente completo de la librería Python. \\
-\code{data/reports/miracl\_es\_corpus\_package.tar.gz} & Corpus masivo comprimido con sus 200 consultas expertas (qrels). \\
-\code{data/indexes/default/} & Directorio con los índices FAISS y BM25 generados. \\
-\code{data/indexes/default\_turbovec/} & Índice TurboVec paralelo para demostración de compresión. \\
-\code{data/reports/doc\_*.json} & Reportes de resultados de evaluación IR y Benchmarks de latencia. \\
+\code{data/processed/miracl\_es\_corpus\_100k.jsonl} & Corpus local de 100\,357 documentos con sus 200 consultas \textit{qrels}. \\
+\code{data/indexes/default\_100k/} & Índices FAISS (Flat) y BM25 generados. \\
+\code{data/indexes/default\_100k\_hnsw/} & Índice FAISS HNSW para el benchmark ANN. \\
+\code{data/indexes/default\_100k\_turbovec/} & Índice TurboVec cuantizado para el benchmark de compresión. \\
+\code{data/reports/eval\_100k\_*.json} & Reportes de evaluación IR (léxico, semántico, híbrido, \textit{rerank}). \\
+\code{data/reports/\{ann\_hnsw\_vs\_flat,turbovec\_benchmark\}\_100k.json} & Benchmarks de latencia/memoria. \\
 \bottomrule
 \end{tabularx}
 \caption{Estructura de entregables del sistema.}
@@ -130,10 +132,10 @@ El proyecto se acompaña de los siguientes archivos, listos para su ejecución y
 \toprule
 \rowcolor{tabheader} \textbf{Capa de software} & \textbf{Tecnología} \\
 \midrule
-Entorno y CLI & Python 3.12.3, Click 8.4.1 \\
-Modelado Vectorial & Sentence Transformers 5.5.1 (\code{paraphrase-multilingual-MiniLM}) \\
-Bases de Datos Vectoriales & FAISS CPU 1.14.2 (IndexFlatIP), TurboVec 0.6.0 (Quantization) \\
-Recuperación Léxica & BM25Okapi (\code{rank-bm25}) \\
+Entorno y CLI & Python 3.12.13, Click 8.4.1 \\
+Modelado Vectorial & Sentence Transformers 5.5.1 (\code{paraphrase-multilingual-MiniLM-L12-v2}), PyTorch 2.5.1+cu121 \\
+Bases de Datos Vectoriales & FAISS CPU 1.14.2 (IndexFlatIP / IndexHNSWFlat), TurboVec (cuantización a 4 bits) \\
+Recuperación Léxica y \textit{Reranking} & BM25Okapi (\code{rank-bm25}); cross-encoder \code{mmarco-mMiniLMv2-L12} \\
 Motor de Inferencia & Ollama (servidor local), modelo \code{gemma4:e4b} \\
 Procesamiento Analítico & BERTopic (UMAP+HDBSCAN), NetworkX (PageRank/TextRank) \\
 \bottomrule
@@ -143,7 +145,7 @@ Procesamiento Analítico & BERTopic (UMAP+HDBSCAN), NetworkX (PageRank/TextRank)
 
 \subsection{Hardware utilizado en pruebas}
 
-Para poder escalar la indexación vectorial a más de un millón de fragmentos sin cuellos de botella masivos en CPU, se ha aprovechado aceleración por hardware (CUDA).
+Para acelerar la generación de \textit{embeddings} de los más de cien mil fragmentos se ha aprovechado aceleración por hardware (CUDA).
 
 \begin{table}[htbp]
 \centering
@@ -152,14 +154,11 @@ Para poder escalar la indexación vectorial a más de un millón de fragmentos s
 \toprule
 \rowcolor{tabheader} \textbf{Componente} & \textbf{Especificación} \\
 \midrule
-Procesador (CPU) & AMD Ryzen 7 5800X (8 cores / 16 hilos) \\
-Memoria Principal (RAM) & 31\,GiB \\
-Acelerador Gráfico (GPU) & NVIDIA GeForce RTX 5060 Ti (8\,GB VRAM) \\
-\midrule
-Motor Vectorial & PyTorch con backend CUDA habilitado \\
+Acelerador Gráfico (GPU) & NVIDIA GeForce RTX 2070 (8\,GB VRAM) \\
+Motor Vectorial & PyTorch 2.5.1 con backend CUDA 12.1 habilitado \\
 \bottomrule
 \end{tabularx}
-\caption{Especificaciones del servidor local.}
+\caption{Especificaciones del servidor local utilizado en la corrida documentada.}
 \end{table}
 
 \FloatBarrier
@@ -186,12 +185,12 @@ El flujo de trabajo se divide conceptualmente en dos grandes bloques: el procesa
 ]
 
 % Nodos FASE OFFLINE
-\node[module] (corpus) {Corpus MIRACL-es\\(1M docs)};
+\node[module] (corpus) {Corpus MIRACL-es\\(100k docs)};
 \node[module, right=of corpus] (clean) {Limpieza y\\Normalización};
 \node[module, right=of clean] (chunk) {Chunking\\(900 chars)};
 \node[module, right=of chunk] (embed) {Encoder GPU\\(SentenceTrf)};
 
-\node[db, below=1.5cm of embed] (vector) {FAISS + BM25\\(1.14M chunks)};
+\node[db, below=1.5cm of embed] (vector) {FAISS + BM25\\(116k chunks)};
 \node[db, below=1.5cm of clean] (topics) {Modelos Offline\\(BERTopic)};
 
 % Enlaces FASE OFFLINE
@@ -267,12 +266,13 @@ Se eligió MIRACL (\textit{Multilingual Information Retrieval Across a Continuum
 \toprule
 \rowcolor{tabheader} \textbf{Métrica del Corpus} & \textbf{Volumen final} \\
 \midrule
-Documentos crudos procesados & 1\,000\,000 documentos \\
-\textit{Chunks} resultantes indexados & 1\,140\,063 fragmentos de texto \\
-Tamaño persistido en disco (JSONL) & 271\,MB de texto puro \\
+Documentos indexados & 100\,357 (100\,000 base + 357 garantizados por \textit{qrels}) \\
+\textit{Chunks} resultantes indexados & 116\,572 fragmentos de texto \\
+Consultas de evaluación (\textit{qrels} expertos) & 200 \\
+Tamaño persistido (FAISS \textit{float32}) & 341,5\,MB de vectores \\
 \bottomrule
 \end{tabularx}
-\caption{Estadísticas del corpus tras la fase de ingestión.}
+\caption{Estadísticas del corpus de 100k tras la fase de ingestión.}
 \end{table}
 
 \FloatBarrier
@@ -281,7 +281,7 @@ Tamaño persistido en disco (JSONL) & 271\,MB de texto puro \\
 \section{Resultados de Evaluación IR}
 %% =========================================================================
 
-El rendimiento de recuperación se evaluó sobre un conjunto oficial de 50 consultas experientes con $k=10$. Extraer respuestas de un pajar de 1,14 millones de fragmentos es un desafío computacional donde el ruido penaliza enormemente los motores simples.
+El rendimiento de recuperación se evaluó sobre el conjunto oficial de \textbf{200 consultas} expertas de MIRACL-es (\textit{dev}) con $k=10$, comparando cuatro configuraciones del motor frente al mismo \textit{ground-truth}. Todas las cifras son reproducibles con el comando \code{mitex eval-ir-file} (ver \code{data/reports/eval\_100k\_*.json}).
 
 \subsection{Métricas obtenidas}
 
@@ -292,23 +292,49 @@ El rendimiento de recuperación se evaluó sobre un conjunto oficial de 50 consu
 \toprule
 \rowcolor{tabheader} \textbf{Motor de Recuperación} & \textbf{Precision@10} & \textbf{Recall@10} & \textbf{MRR} \\
 \midrule
-Motor Léxico (BM25) & 0,073 & 0,341 & 0,264 \\
-Motor Semántico (FAISS) & 0,113 & 0,451 & 0,451 \\
-\rowcolor{green!8} \textbf{Fusión Híbrida (FAISS+BM25)} & \textbf{0,109} & \textbf{0,482} & \textbf{0,542} \\
+Motor Léxico (BM25) & 0,152 & 0,641 & 0,580 \\
+Motor Semántico (FAISS) & 0,163 & 0,671 & 0,649 \\
+Fusión Híbrida (FAISS+BM25, RRF) & 0,186 & 0,781 & 0,713 \\
+\rowcolor{green!8} \textbf{Híbrida + \textit{Reranking} (cross-encoder)} & \textbf{0,210} & \textbf{0,849} & \textbf{0,820} \\
 \bottomrule
 \end{tabularx}
-\caption{Métricas oficiales sobre 1 millón de documentos (50 queries, $k=10$).}
+\caption{Métricas sobre el corpus de 100k (200 \textit{queries}, $k=10$). Cada fila añade un componente al anterior.}
 \end{table}
 
-\subsection{Análisis de la Fusión Híbrida}
+\subsection{Análisis: del baseline al sistema completo}
 
-El enfoque híbrido mediante \textit{Reciprocal Rank Fusion} (RRF) demuestra superioridad absoluta.
+La progresión por capas evidencia el aporte de cada componente sobre el \textit{baseline} léxico:
 
 \begin{itemize}
-  \item \textbf{MRR (0,542):} El sistema logra ubicar el documento correcto (entre 1.14 millones) alrededor de la \textbf{segunda posición} en promedio. Esta métrica es vital para RAG, ya que el LLM presta mayor atención a los textos superiores del \textit{prompt}.
-  \item \textbf{Recall@10 (0,482):} Mejora la captura frente a usar los motores por separado. BM25 actúa como filtro estricto para apellidos o fechas raras, mientras FAISS captura las paráfrasis.
-  \item \textbf{Precisión baja justificada:} Precision@10 es matemáticamente baja (0,109) porque MIRACL-es marca apenas de 1 a 3 documentos como relevantes por consulta. Aunque el sistema recupere 10 documentos útiles, 7 o más siempre contarán como falsos positivos estadísticos.
+  \item \textbf{Híbrido vs. baselines:} la \textit{Reciprocal Rank Fusion} (RRF) supera tanto a BM25 como a FAISS por separado en las tres métricas. El léxico aporta coincidencias exactas (nombres, fechas) y el semántico captura paráfrasis; su fusión eleva el \textit{Recall@10} de 0,67 (semántico) a \textbf{0,78}.
+  \item \textbf{Impacto del \textit{Reranking}:} reordenar los candidatos fusionados con un \textit{cross-encoder} multilingüe es la mejora más rentable: el \textbf{MRR sube de 0,713 a 0,820} (+15\,\%) y el \textit{Recall@10} a 0,849. A diferencia del bi-encoder, el cross-encoder procesa la pareja (consulta, fragmento) conjuntamente, discriminando mejor los matices.
+  \item \textbf{Lectura del MRR (0,82):} el sistema completo ubica un documento relevante, en promedio, prácticamente en \textbf{primera posición}. Es la métrica más relevante para RAG, pues el LLM atiende preferentemente a las primeras fuentes del \textit{prompt}.
+  \item \textbf{Precisión y \textit{qrels}:} \textit{Precision@10} se mantiene moderada (0,21) porque MIRACL-es marca apenas 1--3 documentos relevantes por consulta; recuperar 10 implica un techo de precisión bajo por construcción, de modo que \textit{Recall@10} y \textit{MRR} son indicadores más informativos.
 \end{itemize}
+
+\FloatBarrier
+
+%% =========================================================================
+\section{Benchmark de Indexación Aproximada (HNSW)}
+%% =========================================================================
+
+La búsqueda semántica exacta (\code{IndexFlatIP}) recorre los 116\,572 vectores en cada consulta, con coste lineal $O(N)$. Para escalar, el sistema permite construir un índice aproximado \textbf{HNSW} (\textit{Hierarchical Navigable Small World}) mediante \code{--index-type hnsw}. Se comparó ambos índices sobre las 200 consultas con $k=10$ y vectores idénticos.
+
+\begin{table}[htbp]
+\centering
+\rowcolors{2}{tabheader!40}{white}
+\begin{tabularx}{\textwidth}{X c c c}
+\toprule
+\rowcolor{tabheader} \textbf{Índice} & \textbf{Latencia (ms/consulta)} & \textbf{\textit{Recall@10} vs. exacto} & \textbf{Acierto top-1} \\
+\midrule
+FAISS Flat (exacto) & 0,797 & 1,000 & 1,000 \\
+\rowcolor{green!8} \textbf{FAISS HNSW (aproximado)} & \textbf{0,050} & \textbf{0,994} & \textbf{1,000} \\
+\bottomrule
+\end{tabularx}
+\caption{Búsqueda exacta vs. ANN HNSW (200 \textit{queries}, $k=10$).}
+\end{table}
+
+\textbf{Conclusión:} HNSW resulta $\approx$\textbf{16$\times$ más rápido} conservando el 99,4\,\% de los vecinos del índice exacto y el 100\,\% de los aciertos en primera posición. La pérdida de \textit{recall} es despreciable frente a la ganancia de latencia, lo que habilita la escalabilidad a colecciones mucho mayores sin degradar la calidad percibida.
 
 \FloatBarrier
 
@@ -323,15 +349,15 @@ Escalar a millones de documentos presenta una barrera física: los vectores \tex
 \rowcolors{2}{tabheader!40}{white}
 \begin{tabularx}{\textwidth}{X c c c c}
 \toprule
-\rowcolor{tabheader} \textbf{Tipo de Índice vectorial} & \textbf{P@10} & \textbf{R@10} & \textbf{MRR} & \textbf{Memoria RAM requerida} \\
+\rowcolor{tabheader} \textbf{Tipo de Índice vectorial} & \textbf{P@10} & \textbf{R@10} & \textbf{MRR} & \textbf{Memoria de vectores} \\
 \midrule
-Índice FAISS crudo (\textit{float32}) & 0,113 & 0,451 & 0,451 & 3\,340\,MB \\
-Índice TurboVec Cuantizado (4-bit) & 0,111 & 0,447 & 0,456 & 222\,MB \\
+Índice FAISS crudo (\textit{float32}) & 0,163 & 0,671 & 0,649 & 341,5\,MB \\
+Índice TurboVec Cuantizado (4-bit) & 0,162 & 0,662 & 0,646 & 22,7\,MB \\
 \midrule
-\multicolumn{4}{l}{\textit{Mejora de huella de memoria}} & \textbf{--93,3\,\%} \\
+\multicolumn{4}{l}{\textit{Mejora de huella de memoria}} & \textbf{--93,4\,\%} \\
 \bottomrule
 \end{tabularx}
-\caption{Comparativa de recursos semánticos.}
+\caption{Comparativa de recursos semánticos (200 \textit{queries}, $k=10$). La búsqueda TurboVec fue además $\approx$1,9$\times$ más rápida (2,82 vs. 5,30\,ms/consulta).}
 \end{table}
 
 \begin{center}
@@ -340,20 +366,20 @@ Escalar a millones de documentos presenta una barrera física: los vectores \tex
   \node[anchor=east, font=\small\bfseries] at (-0.2, 0.5) {TurboVec};
 
   \fill[barred, rounded corners=2pt, drop shadow={opacity=0.3}] (0, 1.2) rectangle (10, 2.0);
-  \node[white, font=\small\bfseries] at (5, 1.6) {3340 MB};
+  \node[white, font=\small\bfseries] at (5, 1.6) {341,5 MB};
 
   \fill[barteal, rounded corners=2pt, drop shadow={opacity=0.3}] (0, 0.1) rectangle (0.66, 0.9);
-  \node[right, font=\small\bfseries, barteal] at (0.76, 0.5) {222 MB};
+  \node[right, font=\small\bfseries, barteal] at (0.76, 0.5) {22,7 MB};
 
   \draw[-{Latex}, thin, gray] (0,-0.2) -- (10.5,-0.2);
-  \foreach \x/\l in {0/0, 2.5/835, 5/1670, 7.5/2505, 10/3340} {
+  \foreach \x/\l in {0/0, 2.5/85, 5/171, 7.5/256, 10/342} {
     \draw[gray] (\x,-0.25) -- (\x,-0.15);
     \node[below, font=\tiny, gray] at (\x,-0.25) {\l\,MB};
   }
 \end{tikzpicture}
 \end{center}
 
-\textbf{Conclusión:} TurboVec retiene el desempeño semántico casi a la perfección pero destruye la huella de memoria (de 3.3 GB a apenas 200 MB). Esto prueba que es un requisito de diseño imprescindible para desplegar asistentes conversacionales masivos en \textit{hardware} de consumo.
+\textbf{Conclusión:} TurboVec retiene el desempeño semántico casi a la perfección (caída de \textit{Recall@10} inferior a un punto) pero reduce la huella de memoria de los vectores de 341,5\,MB a 22,7\,MB ($-$93,4\,\%), además de acelerar la búsqueda. Extrapolado a decenas de millones de fragmentos, este factor de compresión es lo que hace viable desplegar el asistente en \textit{hardware} de consumo.
 
 \FloatBarrier
 
@@ -366,13 +392,13 @@ Las siguientes interacciones fueron generadas desde la interfaz CLI interactiva 
 % ------- Ejemplo 1 -------
 \subsection{Consulta Factual (QREL Experto)}
 
-\textbf{Usuario:} \textit{¿Cuál fue el último país en promulgar la abolición de la esclavitud?}
+\textbf{Usuario:} \textit{¿Cómo se convirtió Egipto en musulmán?} (consulta \textit{QREL} oficial del \textit{dev} de MIRACL-es).
 
 \begin{quote}
-Según el contexto recuperado, el último país en promulgar la abolición de la esclavitud fue Mauritania, en 1981 [Fuente 1, Fuente 2].
+Tras la muerte de Mahoma en el año 632 comenzó la expansión musulmana y, en un lapso de cien años, los árabes ocuparon Egipto [Fuente 5]. Durante los primeros 300 años el islam fue ganando adeptos hasta convertirse en la religión predominante de la sociedad egipcia [Fuente 1]\ldots
 \end{quote}
 
-\textit{El modelo encuentra la respuesta correcta gracias al documento maestro recuperado (\code{es/141345\#123}) en primera posición.}
+\textit{La respuesta es trazable y entre las fuentes recuperadas aparece el documento \code{es/33218\#10}, marcado como relevante por los \textit{qrels} expertos para esta consulta, confirmando la coherencia entre recuperación y \textit{ground-truth}.}
 
 \vspace{0.3cm}
 \textbf{Usuario:} \textit{¿Qué país formó la primera Infantería de Marina?}
@@ -429,8 +455,8 @@ Revolución Industrial. La industria textil también fue la primera en utilizar 
 %% =========================================================================
 
 \begin{enumerate}
-  \item \textbf{Ceguera por subconjunto (Missing Documents):} El sistema RAG se evaluó sobre un corpus de 1.000.000 de documentos frente a los 10,4 millones disponibles en la Wikipedia completa. Por lo tanto, si el usuario realiza una pregunta sobre un artículo específico (ej. \textit{"¿Cuál es el río más largo de España?"}) y el artículo "Geografía de España" no está descargado, el motor recuperará el documento más similar posible (ej. Río Duero). Al forzar al LLM a confiar ciegamente en este contexto incompleto, el sistema emitirá respuestas fácticamente incorrectas. Para evitar este sesgo se utilizaron las 200 consultas oficiales QRELs durante la evaluación, asegurando que las respuestas estuvieran garantizadas dentro del subconjunto descargado.
-  \item \textbf{Límites del Motor Léxico (OOM):} No se indexó el 100\% del corpus porque \code{rank-bm25} instancia un diccionario de frecuencias léxicas directo a RAM. Indexar 10 millones de documentos exigiría más de 110 GB de memoria, colapsando servidores estándar y demostrando que motores como ElasticSearch son obligatorios para búsqueda léxica a escala industrial.
+  \item \textbf{Ceguera por subconjunto (Missing Documents):} El experimento documentado se ejecutó sobre 100\,357 documentos, un subconjunto frente a los 10,4 millones disponibles en la Wikipedia completa. Por lo tanto, si el usuario pregunta por un artículo que no está en el subconjunto, el motor recuperará el documento más similar posible y, al forzar al LLM a confiar en ese contexto incompleto, podría emitir respuestas inexactas. Para neutralizar este sesgo durante la evaluación se garantizó que los documentos relevantes de las 200 consultas \textit{QREL} estuvieran incluidos en el corpus (357 documentos añadidos explícitamente), de modo que las métricas reflejan la calidad del recuperador y no el azar de la cobertura.
+  \item \textbf{Límites del Motor Léxico (OOM):} \code{rank-bm25} instancia las frecuencias léxicas directamente en RAM, por lo que la búsqueda léxica no escala de forma indefinida; a escala de decenas de millones de documentos se requeriría un motor invertido en disco (p.\,ej. Elasticsearch/Lucene). La canalización mitiga parcialmente esta barrera con el índice ANN HNSW y la cuantización TurboVec en el lado vectorial.
 \end{enumerate}
 
 %% =========================================================================
