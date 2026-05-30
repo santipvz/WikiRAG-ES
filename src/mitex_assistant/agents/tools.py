@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+from datetime import date
 from pathlib import Path
 
 from mitex_assistant.indexing.embeddings import EmbeddingModel
@@ -29,3 +31,28 @@ class SummaryTool:
     def run_file(self, path: Path, sentences: int = 4) -> str:
         text = path.read_text(encoding="utf-8", errors="replace")
         return self.run_text(text, sentences=sentences)
+
+
+class TopicTool:
+    def __init__(self, report_path: Path) -> None:
+        self.report_path = report_path
+
+    def run(self, max_topics: int = 8) -> str:
+        payload = json.loads(self.report_path.read_text(encoding="utf-8"))
+        method = payload.get("method", "unknown")
+        topic_info = payload.get("topic_info", [])[:max_topics]
+        lines = [f"Modelado offline de topicos. Metodo: {method}."]
+        for topic in topic_info:
+            topic_id = topic.get("Topic", topic.get("topic", "?"))
+            count = topic.get("Count", topic.get("count", "?"))
+            representation = topic.get("Representation") or topic.get("Name") or topic.get("Name", "")
+            if isinstance(representation, list):
+                representation = ", ".join(str(item) for item in representation[:8])
+            lines.append(f"- Topico {topic_id} ({count} docs): {representation}")
+        return "\n".join(lines)
+
+
+class DateTool:
+    def run(self) -> str:
+        today = date.today()
+        return f"Hoy es {today.isoformat()}."

@@ -35,6 +35,9 @@ dev = [
     "pytest>=8.3.2",
     "ruff>=0.5.7",
 ]
+turbovec = [
+    "turbovec>=0.2.0",
+]
 
 [project.scripts]
 mitex = "mitex_assistant.cli.main:main"

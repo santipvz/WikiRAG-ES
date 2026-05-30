@@ -14,6 +14,6 @@ class EmbeddingModel:
             texts,
             batch_size=batch_size,
             normalize_embeddings=True,
-            show_progress_bar=True,
+            show_progress_bar=False,
         )
         return np.asarray(vectors, dtype="float32")

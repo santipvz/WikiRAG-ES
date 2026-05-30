@@ -5,6 +5,13 @@ __pycache__/
 .ruff_cache/
 .mypy_cache/
 .env
+*.egg-info/
+
+# LaTeX build artifacts
+docs/*.aux
+docs/*.log
+docs/*.out
+docs/*.toc
 
 # Local/generated data
 data/raw/*
@@ -15,4 +22,4 @@ data/reports/*
 !data/processed/.gitkeep
 !data/indexes/.gitkeep
 !data/reports/.gitkeep
-
+*.txt
