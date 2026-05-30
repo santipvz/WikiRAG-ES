@@ -228,9 +228,11 @@ def ask_cmd(index_dir: Path, topics_report: Path | None, query: str) -> None:
 @click.option("--topics-report", type=click.Path(exists=True, path_type=Path), default=None)
 def chat_cmd(index_dir: Path, topics_report: Path | None) -> None:
     """Abre un chat interactivo con el asistente."""
+    click.echo("Cargando modelo de embeddings e indice (puede tardar unos segundos)...")
     agent = _build_agent(index_dir, topics_report=topics_report)
     click.echo(
-        "Chat MITEX. Escribe 'salir' para terminar o 'nuevo' para reiniciar la conversacion."
+        "\nChat MITEX listo. Escribe tu pregunta y pulsa Enter.\n"
+        "Comandos: 'nuevo' reinicia la conversacion, 'salir' termina."
     )
     while True:
         query = click.prompt("Usuario", type=str)
