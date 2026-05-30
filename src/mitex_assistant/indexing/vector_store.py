@@ -12,12 +12,38 @@ from mitex_assistant.data.models import Chunk, RetrievalResult
 from mitex_assistant.utils.text import simple_tokenize
 
 
+def build_faiss_index(
+    embeddings: np.ndarray, index_type: str = "flat", hnsw_m: int = 32
+) -> "faiss.Index":
+    """Construye el indice FAISS sobre vectores normalizados (producto interno).
+
+    - ``flat``: busqueda exacta (IndexFlatIP), exhaustiva y O(N) por consulta.
+    - ``hnsw``: grafo HNSW aproximado (ANN), latencia sublineal a gran escala.
+    """
+    dimension = embeddings.shape[1]
+    if index_type == "flat":
+        index = faiss.IndexFlatIP(dimension)
+    elif index_type == "hnsw":
+        index = faiss.IndexHNSWFlat(dimension, hnsw_m, faiss.METRIC_INNER_PRODUCT)
+        index.hnsw.efConstruction = 200
+        index.hnsw.efSearch = 64
+    else:
+        raise ValueError("index_type must be one of: flat, hnsw")
+    index.add(embeddings)
+    return index
+
+
 class HybridIndex:
-    def __init__(self, chunks: list[Chunk], embeddings: np.ndarray) -> None:
+    def __init__(
+        self,
+        chunks: list[Chunk],
+        embeddings: np.ndarray,
+        index_type: str = "flat",
+        hnsw_m: int = 32,
+    ) -> None:
         self.chunks = chunks
         self.embeddings = embeddings.astype("float32")
-        self.faiss_index = faiss.IndexFlatIP(self.embeddings.shape[1])
-        self.faiss_index.add(self.embeddings)
+        self.faiss_index = build_faiss_index(self.embeddings, index_type, hnsw_m)
         self.bm25 = BM25Okapi([simple_tokenize(chunk.text) for chunk in chunks])
 
     def save(self, index_dir: Path) -> None:
@@ -71,7 +97,13 @@ class HybridIndex:
         ]
 
 
-def build_hybrid_index(chunks: list[Chunk], embeddings: np.ndarray, index_dir: Path) -> HybridIndex:
-    index = HybridIndex(chunks, embeddings)
+def build_hybrid_index(
+    chunks: list[Chunk],
+    embeddings: np.ndarray,
+    index_dir: Path,
+    index_type: str = "flat",
+    hnsw_m: int = 32,
+) -> HybridIndex:
+    index = HybridIndex(chunks, embeddings, index_type=index_type, hnsw_m=hnsw_m)
     index.save(index_dir)
     return index

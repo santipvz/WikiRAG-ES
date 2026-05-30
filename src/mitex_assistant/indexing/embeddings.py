@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
 
 class EmbeddingModel:
     def __init__(self, model_name: str) -> None:
+        # Import diferido: evita cargar torch/sentence-transformers en comandos
+        # que no generan embeddings y agiliza el arranque de la CLI y los tests.
+        from sentence_transformers import SentenceTransformer
+
         self.model_name = model_name
         self.model = SentenceTransformer(model_name)
 

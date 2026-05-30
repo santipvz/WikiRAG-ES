@@ -18,12 +18,16 @@ def evaluate_ir_file(
     k: int = 10,
     limit: int | None = None,
     output_path: Path | None = None,
+    reranker=None,
+    rerank_top_k: int | None = None,
 ) -> dict:
     if mode not in {"hybrid", "semantic", "lexical"}:
         raise ValueError("mode must be one of: hybrid, semantic, lexical")
 
     index = HybridIndex.load(index_dir)
-    retriever = HybridRetriever(index, embedding_model)
+    retriever = HybridRetriever(
+        index, embedding_model, reranker=reranker, rerank_top_k=rerank_top_k
+    )
     metrics: list[IRMetrics] = []
     per_query: list[dict] = []
     for row_number, row in enumerate(read_jsonl(queries_path), start=1):

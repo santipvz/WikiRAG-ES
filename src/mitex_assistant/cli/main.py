@@ -157,12 +157,18 @@ def package_corpus_cmd(
     "--corpus", "corpus_path", type=click.Path(exists=True, path_type=Path), required=True
 )
 @click.option("--index-dir", type=click.Path(path_type=Path), required=True)
-def build_index_cmd(corpus_path: Path, index_dir: Path) -> None:
+@click.option(
+    "--index-type",
+    type=click.Choice(["flat", "hnsw"]),
+    default=None,
+    help="flat (exacto) o hnsw (ANN aproximado). Por defecto MITEX_INDEX_TYPE.",
+)
+def build_index_cmd(corpus_path: Path, index_dir: Path, index_type: str | None) -> None:
     """Construye chunks, embeddings, FAISS y BM25."""
     from mitex_assistant.indexing.pipeline import build_index
 
     settings = get_settings()
-    total = build_index(corpus_path, index_dir, settings)
+    total = build_index(corpus_path, index_dir, settings, index_type=index_type)
     click.echo(f"Indice construido con {total} chunks en {index_dir}")
 
 
@@ -223,11 +229,18 @@ def ask_cmd(index_dir: Path, topics_report: Path | None, query: str) -> None:
 def chat_cmd(index_dir: Path, topics_report: Path | None) -> None:
     """Abre un chat interactivo con el asistente."""
     agent = _build_agent(index_dir, topics_report=topics_report)
-    click.echo("Chat MITEX. Escribe 'salir' para terminar.")
+    click.echo(
+        "Chat MITEX. Escribe 'salir' para terminar o 'nuevo' para reiniciar la conversacion."
+    )
     while True:
         query = click.prompt("Usuario", type=str)
-        if query.lower().strip() in {"salir", "exit", "quit"}:
+        normalized = query.lower().strip()
+        if normalized in {"salir", "exit", "quit"}:
             break
+        if normalized in {"nuevo", "reset", "reiniciar"}:
+            agent.reset()
+            click.echo("\n[Memoria conversacional reiniciada]\n")
+            continue
         response = agent.answer(query)
         click.echo(f"\nAsistente ({response.action}):\n{response.answer}\n")
 
@@ -266,6 +279,7 @@ def eval_ir_cmd(index_dir: Path, query: str, relevant: tuple[str, ...], k: int) 
 @click.option("--k", default=10, show_default=True)
 @click.option("--limit", type=int, default=None)
 @click.option("--output", "output_path", type=click.Path(path_type=Path), default=None)
+@click.option("--rerank", is_flag=True, default=False, help="Aplica el cross-encoder reranker.")
 def eval_ir_file_cmd(
     index_dir: Path,
     queries_path: Path,
@@ -273,6 +287,7 @@ def eval_ir_file_cmd(
     k: int,
     limit: int | None,
     output_path: Path | None,
+    rerank: bool,
 ) -> None:
     """Evalua recuperacion con un fichero de consultas etiquetadas."""
     from mitex_assistant.eval.batch import evaluate_ir_file
@@ -280,7 +295,24 @@ def eval_ir_file_cmd(
 
     settings = get_settings()
     embedding_model = EmbeddingModel(settings.embedding_model)
-    payload = evaluate_ir_file(index_dir, queries_path, embedding_model, mode, k, limit, output_path)
+    reranker = None
+    rerank_top_k = None
+    if rerank:
+        from mitex_assistant.retrieval.reranking import CrossEncoderReranker
+
+        reranker = CrossEncoderReranker(settings.reranker_model)
+        rerank_top_k = k
+    payload = evaluate_ir_file(
+        index_dir,
+        queries_path,
+        embedding_model,
+        mode,
+        k,
+        limit,
+        output_path,
+        reranker=reranker,
+        rerank_top_k=rerank_top_k,
+    )
     summary = {key: value for key, value in payload.items() if key != "per_query"}
     click.echo(json.dumps(summary, ensure_ascii=False, indent=2))
 
@@ -326,7 +358,13 @@ def bench_turbovec_cmd(
 
 def _build_agent(index_dir: Path, topics_report: Path | None = None):
     from mitex_assistant.agents.router import AssistantAgent
-    from mitex_assistant.agents.tools import DateTool, RagTool, SummaryTool, TopicTool
+    from mitex_assistant.agents.tools import (
+        DateTool,
+        RagTool,
+        SummaryTool,
+        TopicTool,
+        WebSearchTool,
+    )
     from mitex_assistant.indexing.embeddings import EmbeddingModel
     from mitex_assistant.indexing.vector_store import HybridIndex
     from mitex_assistant.llm.factory import create_llm
@@ -335,7 +373,17 @@ def _build_agent(index_dir: Path, topics_report: Path | None = None):
     settings = get_settings()
     embedding_model = EmbeddingModel(settings.embedding_model)
     index = HybridIndex.load(index_dir)
-    retriever = HybridRetriever(index, embedding_model)
+    reranker = None
+    if settings.use_reranker:
+        from mitex_assistant.retrieval.reranking import CrossEncoderReranker
+
+        reranker = CrossEncoderReranker(settings.reranker_model)
+    retriever = HybridRetriever(
+        index,
+        embedding_model,
+        reranker=reranker,
+        rerank_top_k=settings.rerank_top_k if reranker else None,
+    )
     llm = create_llm(settings)
     return AssistantAgent(
         llm=llm,
@@ -343,6 +391,8 @@ def _build_agent(index_dir: Path, topics_report: Path | None = None):
         summary_tool=SummaryTool(embedding_model),
         topic_tool=TopicTool(topics_report) if topics_report is not None else None,
         date_tool=DateTool(),
+        web_tool=WebSearchTool(settings.web_search_results, settings.web_search_timeout),
+        use_llm_router=settings.use_llm_router,
     )
 
 

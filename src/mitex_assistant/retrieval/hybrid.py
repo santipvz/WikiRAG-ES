@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from mitex_assistant.data.models import RetrievalResult
 from mitex_assistant.indexing.embeddings import EmbeddingModel
 from mitex_assistant.indexing.vector_store import HybridIndex
 from mitex_assistant.utils.text import strip_prompt_injection
+
+if TYPE_CHECKING:
+    from mitex_assistant.retrieval.reranking import CrossEncoderReranker
 
 
 def reciprocal_rank_fusion(
@@ -33,15 +38,29 @@ def reciprocal_rank_fusion(
 
 
 class HybridRetriever:
-    def __init__(self, index: HybridIndex, embedding_model: EmbeddingModel) -> None:
+    def __init__(
+        self,
+        index: HybridIndex,
+        embedding_model: EmbeddingModel,
+        reranker: "CrossEncoderReranker | None" = None,
+        rerank_top_k: int | None = None,
+    ) -> None:
         self.index = index
         self.embedding_model = embedding_model
+        self.reranker = reranker
+        self.rerank_top_k = rerank_top_k
 
     def retrieve(self, query: str, top_k: int = 8) -> list[RetrievalResult]:
+        # Con reranker recuperamos mas candidatos para darle margen de reordenado.
+        candidate_k = max(top_k, (self.rerank_top_k or top_k) * 2) if self.reranker else top_k
         query_embedding = self.embedding_model.encode([query])
-        semantic = self.index.semantic_search(np.asarray(query_embedding), top_k=top_k)
-        lexical = self.index.lexical_search(query, top_k=top_k)
-        return reciprocal_rank_fusion([semantic, lexical], top_k=top_k)
+        semantic = self.index.semantic_search(np.asarray(query_embedding), top_k=candidate_k)
+        lexical = self.index.lexical_search(query, top_k=candidate_k)
+        fused = reciprocal_rank_fusion([semantic, lexical], top_k=candidate_k)
+        if self.reranker is None:
+            return fused[:top_k]
+        final_k = self.rerank_top_k or top_k
+        return self.reranker.rerank(query, fused, top_k=final_k)
 
     def build_context(self, results: list[RetrievalResult], max_chars: int = 6000) -> str:
         blocks: list[str] = []

@@ -55,7 +55,7 @@ Se ha diseñado e implementado un \textbf{asistente documental local} basado en 
 \begin{itemize}
   \item \textbf{Corpus:} 1\,000\,000 de documentos extraídos de MIRACL-es.
   \item \textbf{Escala de indexación:} 1\,140\,063 \textit{chunks} procesados e indexados.
-  \item \textbf{Motor LLM:} \code{gemma3:4b} operando íntegramente en local a través de Ollama.
+  \item \textbf{Motor LLM:} \code{gemma4:e4b} operando íntegramente en local a través de Ollama.
   \item \textbf{Recuperación:} Sistema híbrido que fusiona recuperación semántica (FAISS) y léxica (BM25) mediante \textit{Reciprocal Rank Fusion} (RRF).
   \item \textbf{Eficiencia:} Implementación paralela de cuantización vectorial (TurboVec) que reduce la huella de memoria RAM en más de un 93\,\%.
 \end{itemize}
@@ -83,9 +83,9 @@ Modelado de tópicos & \code{topics/modeling.py} & Agrupación semántica \texti
 Resumen extractivo & \code{summarization/extractive.py} & TextRank sobre grafos + MMR para penalizar redundancia. \\
 LLM Local & \code{llm/ollama.py} & Conexión nativa con Ollama, hiperparámetros ajustados. \\
 Pipeline RAG & \code{retrieval/hybrid.py} & Fusión híbrida FAISS + BM25 con normalización de \textit{scores}. \\
-Router Agencial & \code{agents/router.py} & Invocación condicional de herramientas vía expresiones regulares. \\
+Router Agencial & \code{agents/router.py} & Enrutado híbrido: atajos deterministas por regex y desambiguación con el LLM (salida JSON). \\
 \midrule
-\textit{Innovación} & \code{indexing/turbovec\_store.py} & Compresión extrema de vectores mediante cuantización (PQ). \\
+\textit{Innovación} & \code{indexing/turbovec\_store.py} & Compresión extrema de vectores mediante cuantización por anchura de bits (TurboQuant). \\
 \bottomrule
 \end{tabularx}
 \caption{Mapeo de requisitos del enunciado y módulos desarrollados.}
@@ -134,7 +134,7 @@ Entorno y CLI & Python 3.12.3, Click 8.4.1 \\
 Modelado Vectorial & Sentence Transformers 5.5.1 (\code{paraphrase-multilingual-MiniLM}) \\
 Bases de Datos Vectoriales & FAISS CPU 1.14.2 (IndexFlatIP), TurboVec 0.6.0 (Quantization) \\
 Recuperación Léxica & BM25Okapi (\code{rank-bm25}) \\
-Motor de Inferencia & Ollama (servidor local), modelo \code{gemma3:4b} \\
+Motor de Inferencia & Ollama (servidor local), modelo \code{gemma4:e4b} \\
 Procesamiento Analítico & BERTopic (UMAP+HDBSCAN), NetworkX (PageRank/TextRank) \\
 \bottomrule
 \end{tabularx}
@@ -227,7 +227,7 @@ El flujo de trabajo se divide conceptualmente en dos grandes bloques: el procesa
 
 \subsection{Diseño Agencial del Router}
 
-En lugar de construir un RAG tradicional donde toda pregunta activa incondicionalmente la base vectorial, se ha implementado un \textbf{Agente Router}. La clase \code{AssistantAgent} analiza sintácticamente la consulta y decide qué herramienta invocar, ahorrando tokens y reduciendo alucinaciones.
+En lugar de construir un RAG tradicional donde toda pregunta activa incondicionalmente la base vectorial, se ha implementado un \textbf{Agente Router} de dos niveles. La clase \code{AssistantAgent} aplica primero atajos deterministas por expresiones regulares para disparadores explícitos (resumen, fecha, tópicos) y, ante consultas ambiguas, delega la decisión en el \textbf{LLM}, que selecciona la herramienta devolviendo un objeto JSON (\code{function-calling} ligero). Si el LLM no está disponible o su salida es inválida, el sistema recae con seguridad en la herramienta RAG. Esto ahorra tokens, reduce alucinaciones y mantiene un comportamiento robusto y trazable. El agente conserva además \textbf{memoria conversacional}: reescribe las preguntas de seguimiento como consultas autónomas antes de recuperar.
 
 \begin{table}[htbp]
 \centering
@@ -240,7 +240,8 @@ En lugar de construir un RAG tradicional donde toda pregunta activa incondiciona
 \code{RagTool} & (Fallback por defecto) & Ejecuta FAISS y BM25, fusiona con RRF e inyecta fragmentos al LLM. \\
 \code{SummaryTool} & \textit{resume, ideas principales...} & Calcula TextRank sobre los documentos y devuelve un resumen exacto. \\
 \code{TopicTool} & \textit{tópico, tema, cluster...} & Extrae información del archivo JSON de clústeres de BERTopic. \\
-\code{DateTool} & \textit{qué día es hoy...} & Realiza una llamada al sistema para obtener el \textit{timestamp} actual. \\
+\code{DateTool} & \textit{qué día es hoy...} & Devuelve la fecha actual formateada en español (día de la semana incluido). \\
+\code{WebSearchTool} & (Decisión del LLM) & Busca en la web (DuckDuckGo) información complementaria y la fusiona con el contexto local. \\
 \bottomrule
 \end{tabularx}
 \caption{Inventario de herramientas del Agente Router.}
@@ -315,7 +316,7 @@ El enfoque híbrido mediante \textit{Reciprocal Rank Fusion} (RRF) demuestra sup
 \section{Benchmark de Cuantización (TurboVec)}
 %% =========================================================================
 
-Escalar a millones de documentos presenta una barrera física: los vectores \textit{float32} colapsan la memoria RAM. Para solucionarlo, se implementó un motor secundario \textbf{TurboVec}, que cuantiza los vectores a 4 bits utilizando \textit{Product Quantization}.
+Escalar a millones de documentos presenta una barrera física: los vectores \textit{float32} colapsan la memoria RAM. Para solucionarlo, se implementó un motor secundario \textbf{TurboVec}, que cuantiza cada componente de los vectores a 4 bits (esquema TurboQuant de anchura de bits sobre un \textit{IdMapIndex}).
 
 \begin{table}[htbp]
 \centering

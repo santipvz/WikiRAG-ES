@@ -4,9 +4,20 @@ import json
 from datetime import date
 from pathlib import Path
 
+from mitex_assistant.agents.web_search import WebSearchTool
 from mitex_assistant.indexing.embeddings import EmbeddingModel
 from mitex_assistant.retrieval.hybrid import HybridRetriever
 from mitex_assistant.summarization.extractive import textrank_summary
+
+__all__ = ["RagTool", "SummaryTool", "TopicTool", "DateTool", "WebSearchTool"]
+
+WEEKDAYS_ES = [
+    "lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo",
+]
+MONTHS_ES = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+]
 
 
 class RagTool:
@@ -25,12 +36,14 @@ class SummaryTool:
     def __init__(self, embedding_model: EmbeddingModel) -> None:
         self.embedding_model = embedding_model
 
-    def run_text(self, text: str, sentences: int = 4) -> str:
-        return " ".join(textrank_summary(text, self.embedding_model, sentences=sentences))
+    def run_text(self, text: str, sentences: int = 4, query: str | None = None) -> str:
+        return " ".join(
+            textrank_summary(text, self.embedding_model, sentences=sentences, query=query)
+        )
 
-    def run_file(self, path: Path, sentences: int = 4) -> str:
+    def run_file(self, path: Path, sentences: int = 4, query: str | None = None) -> str:
         text = path.read_text(encoding="utf-8", errors="replace")
-        return self.run_text(text, sentences=sentences)
+        return self.run_text(text, sentences=sentences, query=query)
 
 
 class TopicTool:
@@ -55,4 +68,6 @@ class TopicTool:
 class DateTool:
     def run(self) -> str:
         today = date.today()
-        return f"Hoy es {today.isoformat()}."
+        weekday = WEEKDAYS_ES[today.weekday()]
+        month = MONTHS_ES[today.month - 1]
+        return f"Hoy es {weekday}, {today.day} de {month} de {today.year}."

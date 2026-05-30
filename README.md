@@ -10,13 +10,13 @@ consultas y juicios de relevancia expertos.
 
 - `acquisition`: descarga de MIRACL-es desde HuggingFace y generación de corpus/evaluación local.
 - `ingestion`: extracción de PDF/TXT/HTML, normalización, deduplicación y filtrado de inyecciones.
-- `indexing`: chunking, embeddings con Sentence Transformers, índice FAISS e índice BM25.
+- `indexing`: chunking, embeddings con Sentence Transformers, índice FAISS (exacto `flat` o ANN `hnsw`) e índice BM25.
 - `indexing.turbovec_*`: índice cuantizado opcional con TurboVec/TurboQuant para comparativa.
 - `topics`: modelado de tópicos offline con BERTopic o NMF como fallback ligero.
 - `summarization`: resumen extractivo con TextRank y selección MMR.
-- `retrieval`: recuperación híbrida FAISS+BM25 con Reciprocal Rank Fusion (RRF).
+- `retrieval`: recuperación híbrida FAISS+BM25 con Reciprocal Rank Fusion (RRF) y reranking opcional con cross-encoder.
 - `llm`: cliente LLM configurable (Ollama por defecto).
-- `agents`: router agencial con herramientas RAG, resumen, tópicos y fecha.
+- `agents`: router agencial (regex + desambiguación con el LLM en JSON) con herramientas RAG, resumen, tópicos, fecha y búsqueda web; memoria conversacional.
 - `eval`: métricas de recuperación (Precision@k, Recall@k, MRR) y benchmark de cuantización.
 - `cli`: comandos de ingesta, indexado, tópicos, chat y evaluación.
 
@@ -26,7 +26,6 @@ consultas y juicios de relevancia expertos.
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
-python -m spacy download es_core_news_sm
 ```
 
 Extra opcional para TurboQuant:
@@ -35,23 +34,31 @@ Extra opcional para TurboQuant:
 pip install -e .[turbovec]
 ```
 
-El proveedor LLM por defecto es Ollama y el modelo usado en las pruebas es `gemma3:4b`.
+El proveedor LLM por defecto es Ollama y el modelo usado en las pruebas es `gemma4:e4b`.
 Se puede cambiar con `MITEX_OLLAMA_MODEL`; el endpoint por defecto es
 `MITEX_OLLAMA_URL=http://localhost:11434`.
 
 ```bash
-ollama pull gemma3:4b
+ollama pull gemma4:e4b
 ```
 
 ## Evaluación Rápida (Demo)
 
-Para evaluar el proyecto sin necesidad de descargar el corpus de 1M de documentos ni indexarlo, se ha incluido un script de lanzamiento automático. Asegúrese de tener Python 3 y Ollama instalados, y ejecute:
+Para probar el asistente sin reconstruir el índice, instala las dependencias y lanza el
+chat sobre un índice ya compilado. Asegúrate de tener Python 3 y Ollama en marcha:
 
 ```bash
-./run_demo.sh
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e .
+ollama pull gemma4:e4b
+mitex chat \
+  --index-dir data/indexes/default \
+  --topics-report data/reports/topics.json
 ```
 
-Este script creará el entorno virtual, instalará las dependencias de forma silenciosa e iniciará el Agente Router en modo chat interactivo cargando el índice ya pre-compilado de 1.14 millones de vectores.
+El índice de referencia se construye a partir de 100 000 documentos de MIRACL-es (ver
+"Flujo recomendado"). El paquete del corpus está en
+`data/reports/miracl_es_corpus_package.tar.gz`.
 
 ## Flujo recomendado
 
@@ -62,10 +69,12 @@ mitex acquire-corpus \
   --eval-output data/reports/miracl_es_eval.jsonl \
   --limit 100000 --eval-limit 200
 
-# 2. Construir índice FAISS + BM25
+# 2. Construir índice FAISS + BM25 (100 000 documentos)
+#    --index-type flat (exacto, por defecto) o hnsw (ANN aproximado, más rápido a gran escala)
 mitex build-index \
   --corpus data/processed/miracl_es_corpus.jsonl \
-  --index-dir data/indexes/default
+  --index-dir data/indexes/default \
+  --index-type flat
 
 # 3. Modelado de tópicos offline
 mitex topics \
@@ -101,12 +110,15 @@ mitex ask \
 | Embeddings | `indexing/embeddings.py` | Sentence Transformers multilingüe |
 | Modelado de tópicos | `topics/modeling.py` | BERTopic / NMF offline sobre el corpus |
 | Resumen extractivo | `summarization/extractive.py` | TextRank con selección MMR |
-| LLM | `llm/ollama.py` | Ollama con gemma3:4b |
+| LLM | `llm/ollama.py` | Ollama con gemma4:e4b |
 | RAG | `retrieval/hybrid.py` | FAISS semántico + BM25 léxico + RRF |
-| Agentes | `agents/router.py` | Router con herramientas RAG, resumen, tópicos, fecha |
+| Agentes | `agents/router.py` | Router regex + LLM (JSON) con herramientas RAG, resumen, tópicos, fecha y búsqueda web |
 | Extra: adquisición | `acquisition/miracl.py` | Descarga automática de MIRACL-es |
-| Extra: limpieza | `ingestion/`, `utils/text.py` | Normalización, deduplicación, filtrado |
+| Extra: limpieza | `ingestion/`, `utils/text.py` | Normalización, deduplicación, filtrado anti-inyección |
 | Extra: cuantización | `indexing/turbovec_store.py` | Benchmark FAISS vs TurboVec |
+| Extra: reranking | `retrieval/reranking.py` | Cross-encoder multilingüe sobre los candidatos RRF |
+| Extra: ANN | `indexing/vector_store.py` | Índice FAISS HNSW aproximado para escala |
+| Extra: búsqueda web | `agents/web_search.py` | Información complementaria de DuckDuckGo integrada en el prompt |
 
 ## Validación
 
@@ -132,7 +144,28 @@ mitex eval-ir-file --index-dir data/indexes/default \
   --queries data/reports/miracl_es_eval.jsonl \
   --mode hybrid --k 10 --limit 200 \
   --output data/reports/eval_hybrid.json
+
+# Comparativa con reranking cross-encoder sobre la fusión híbrida
+mitex eval-ir-file --index-dir data/indexes/default \
+  --queries data/reports/miracl_es_eval.jsonl \
+  --mode hybrid --k 10 --limit 200 --rerank \
+  --output data/reports/eval_hybrid_rerank.json
 ```
+
+## Configuración (variables de entorno)
+
+| Variable | Por defecto | Descripción |
+|----------|-------------|-------------|
+| `MITEX_INDEX_TYPE` | `flat` | Tipo de índice FAISS: `flat` (exacto) o `hnsw` (ANN). |
+| `MITEX_HNSW_M` | `32` | Grado del grafo HNSW cuando `index_type=hnsw`. |
+| `MITEX_USE_RERANKER` | `false` | Activa el cross-encoder reranker en chat/ask. |
+| `MITEX_RERANKER_MODEL` | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` | Modelo cross-encoder multilingüe. |
+| `MITEX_RERANK_TOP_K` | `5` | Nº de resultados finales tras el reranking. |
+| `MITEX_USE_LLM_ROUTER` | `true` | El LLM desambigua la herramienta ante consultas ambiguas. |
+| `MITEX_WEB_SEARCH_RESULTS` | `4` | Nº de resultados web a integrar. |
+| `MITEX_OLLAMA_MODEL` | `gemma4:e4b` | Modelo LLM servido por Ollama. |
+
+En el chat interactivo, escribe `nuevo` para reiniciar la memoria conversacional y `salir` para terminar.
 
 ## TurboQuant (benchmark opcional)
 
