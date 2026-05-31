@@ -605,11 +605,4 @@ PYTHONPATH=src wikirag chat \
   --topics-report data/reports/topics.json
 \end{verbatim}
 
-\subsection*{C. Reproducción de Benchmarks de Escalabilidad}
-Los scripts automatizados que generan la gráfica de degradación léxica y la gráfica comparativa de técnicas de vectorización (Secciones 7 y 7.1) pueden ser invocados directamente si el corpus base está construido:
-\begin{verbatim}
-PYTHONPATH=src python scripts/bench_scaling.py
-PYTHONPATH=src python scripts/bench_scaling_techniques.py
-\end{verbatim}
-
 \end{document}
