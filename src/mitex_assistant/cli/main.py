@@ -214,6 +214,12 @@ def topics_cmd(corpus_path: Path, output_path: Path, method: str) -> None:
 @click.argument("query")
 def ask_cmd(index_dir: Path, topics_report: Path | None, query: str) -> None:
     """Responde una consulta puntual."""
+    from mitex_assistant.agents.router import deterministic_route
+    from mitex_assistant.agents.tools import DateTool
+
+    if deterministic_route(query) == "date":
+        click.echo(DateTool().run())
+        return
     agent = _build_agent(index_dir, topics_report=topics_report)
     response = agent.answer(query)
     click.echo(response.answer)
@@ -293,13 +299,18 @@ def eval_ir_file_cmd(
 ) -> None:
     """Evalua recuperacion con un fichero de consultas etiquetadas."""
     from mitex_assistant.eval.batch import evaluate_ir_file
-    from mitex_assistant.indexing.embeddings import EmbeddingModel
 
     settings = get_settings()
-    embedding_model = EmbeddingModel(settings.embedding_model)
+    embedding_model = None
+    if mode in {"hybrid", "semantic"}:
+        from mitex_assistant.indexing.embeddings import EmbeddingModel
+
+        embedding_model = EmbeddingModel(settings.embedding_model)
     reranker = None
     rerank_top_k = None
     if rerank:
+        if mode != "hybrid":
+            raise click.ClickException("--rerank solo es compatible con --mode hybrid.")
         from mitex_assistant.retrieval.reranking import CrossEncoderReranker
 
         reranker = CrossEncoderReranker(settings.reranker_model)
@@ -374,7 +385,7 @@ def _build_agent(index_dir: Path, topics_report: Path | None = None):
 
     settings = get_settings()
     embedding_model = EmbeddingModel(settings.embedding_model)
-    index = HybridIndex.load(index_dir)
+    index = HybridIndex.load(index_dir, load_embeddings=False, load_faiss=True, load_bm25=True)
     reranker = None
     if settings.use_reranker:
         from mitex_assistant.retrieval.reranking import CrossEncoderReranker

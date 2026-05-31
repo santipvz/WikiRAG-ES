@@ -38,52 +38,53 @@ pip install turbovec
 
 ## 3. Inicio rápido (índice ya construido)
 
-Si ya existe `data/indexes/default_100k/` (corrida documentada en el informe), puedes
-chatear directamente:
+Tras descomprimir `MITEX_DATA.tar.gz`, el índice de entrega queda en
+`data/indexes/default/` y el informe de tópicos en `data/reports/topics.json`:
 
 ```bash
 source .venv312/bin/activate
 PYTHONPATH=src mitex chat \
-  --index-dir data/indexes/default_100k \
-  --topics-report data/reports/topics_100k.json
+  --index-dir data/indexes/default \
+  --topics-report data/reports/topics.json
 ```
 
 En el chat: escribe `nuevo` para reiniciar la memoria conversacional y `salir` para terminar.
 
 ---
 
-## 4. Construir todo desde cero (100 000 documentos)
+## 4. Construir todo desde cero (1 000 000 documentos)
 
 ```bash
 source .venv312/bin/activate
 
 # 1) Descargar corpus + evaluación (Wikipedia ES, qrels expertos)
 PYTHONPATH=src mitex acquire-corpus \
-  --corpus-output data/processed/miracl_es_corpus_100k.jsonl \
-  --eval-output data/reports/miracl_es_eval_100k.jsonl \
-  --limit 100000 --eval-limit 200
+  --corpus-output data/processed/miracl_es_corpus_1M.jsonl \
+  --eval-output data/reports/miracl_es_eval.jsonl \
+  --limit 1000000 --eval-limit 200
 
 # 2) Construir índice FAISS (exacto) + BM25
 PYTHONPATH=src mitex build-index \
-  --corpus data/processed/miracl_es_corpus_100k.jsonl \
-  --index-dir data/indexes/default_100k \
+  --corpus data/processed/miracl_es_corpus_1M.jsonl \
+  --index-dir data/indexes/default \
   --index-type flat
 
-#    (opcional) índice ANN aproximado HNSW, ~16x más rápido
+#    (opcional) índice ANN aproximado HNSW; no se incluye en MITEX_DATA por tamaño
 PYTHONPATH=src mitex build-index \
-  --corpus data/processed/miracl_es_corpus_100k.jsonl \
-  --index-dir data/indexes/default_100k_hnsw \
+  --corpus data/processed/miracl_es_corpus_1M.jsonl \
+  --index-dir data/indexes/default_hnsw \
   --index-type hnsw
 
 # 3) Modelado de tópicos offline (BERTopic)
+#    La entrega proporciona topics.json generado sobre 100 198 documentos.
 PYTHONPATH=src mitex topics \
-  --corpus data/processed/miracl_es_corpus_100k.jsonl \
-  --output data/reports/topics_100k.json
+  --corpus data/processed/miracl_es_corpus_1M.jsonl \
+  --output data/reports/topics.json
 
 # 4) Chatear
 PYTHONPATH=src mitex chat \
-  --index-dir data/indexes/default_100k \
-  --topics-report data/reports/topics_100k.json
+  --index-dir data/indexes/default \
+  --topics-report data/reports/topics.json
 ```
 
 ---
@@ -92,8 +93,8 @@ PYTHONPATH=src mitex chat \
 
 ```bash
 PYTHONPATH=src mitex ask \
-  --index-dir data/indexes/default_100k \
-  --topics-report data/reports/topics_100k.json \
+  --index-dir data/indexes/default \
+  --topics-report data/reports/topics.json \
   "¿Cómo se convirtió Egipto en musulmán?"
 ```
 
@@ -102,30 +103,30 @@ PYTHONPATH=src mitex ask \
 ## 6. Benchmarks de validación
 
 ```bash
-IDX=data/indexes/default_100k
-Q=data/reports/miracl_es_eval_100k.jsonl
+IDX=data/indexes/default
+Q=data/reports/miracl_es_eval.jsonl
 
-# IR: léxico vs semántico vs híbrido vs híbrido+reranking (200 queries, k=10)
+# IR: léxico vs semántico vs híbrido (50 queries documentadas, k=10)
 for mode in lexical semantic hybrid; do
   PYTHONPATH=src mitex eval-ir-file --index-dir $IDX --queries $Q \
-    --mode $mode --k 10 --limit 200 --output data/reports/eval_100k_$mode.json
+    --mode $mode --k 10 --limit 50 --output data/reports/doc_eval_$mode.json
 done
 PYTHONPATH=src mitex eval-ir-file --index-dir $IDX --queries $Q \
-  --mode hybrid --k 10 --limit 200 --rerank \
-  --output data/reports/eval_100k_hybrid_rerank.json
+  --mode hybrid --k 10 --limit 50 --rerank \
+  --output data/reports/doc_eval_hybrid_rerank.json
 
-# Benchmark ANN HNSW vs Flat (latencia + recall)
-PYTHONPATH=src python scripts/bench_ann_hnsw.py
+# Benchmark ANN HNSW vs Flat (requiere haber construido data/indexes/default_hnsw)
+PYTHONPATH=src python scripts/bench_ann_hnsw.py --limit 50
 
 # Benchmark de cuantización TurboVec (memoria)
 PYTHONPATH=src mitex build-turbovec-index \
-  --corpus data/processed/miracl_es_corpus_100k.jsonl \
-  --index-dir data/indexes/default_100k_turbovec --bit-width 4
+  --corpus data/processed/miracl_es_corpus_1M.jsonl \
+  --index-dir data/indexes/default_turbovec --bit-width 4
 PYTHONPATH=src mitex bench-turbovec \
   --faiss-index-dir $IDX \
-  --turbovec-index-dir data/indexes/default_100k_turbovec \
-  --queries $Q --limit 200 --k 10 \
-  --output data/reports/turbovec_benchmark_100k.json
+  --turbovec-index-dir data/indexes/default_turbovec \
+  --queries $Q --limit 50 --k 10 \
+  --output data/reports/doc_turbovec_benchmark.json
 ```
 
 ---
@@ -134,6 +135,8 @@ PYTHONPATH=src mitex bench-turbovec \
 
 ```bash
 PYTHONPATH=src pytest -q
+PYTHONPATH=src python -m compileall src scripts
+ruff check .
 ```
 
 ---
@@ -152,8 +155,8 @@ Ejemplo con reranking activado:
 
 ```bash
 MITEX_USE_RERANKER=true PYTHONPATH=src mitex chat \
-  --index-dir data/indexes/default_100k \
-  --topics-report data/reports/topics_100k.json
+  --index-dir data/indexes/default \
+  --topics-report data/reports/topics.json
 ```
 
 ---

@@ -24,3 +24,4 @@ data/reports/*
 !data/indexes/.gitkeep
 !data/reports/.gitkeep
 *.txt
+MITEX_DATA.tar.gz

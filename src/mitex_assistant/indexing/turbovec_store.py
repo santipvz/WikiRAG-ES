@@ -41,7 +41,7 @@ class TurboVecIndex:
         )
 
     @classmethod
-    def load(cls, index_dir: Path) -> "TurboVecIndex":
+    def load(cls, index_dir: Path, *, load_chunk_text: bool = True) -> "TurboVecIndex":
         try:
             from turbovec import IdMapIndex
         except ImportError as exc:
@@ -53,7 +53,15 @@ class TurboVecIndex:
         with (index_dir / "chunks.jsonl").open("r", encoding="utf-8") as file:
             for line in file:
                 if line.strip():
-                    chunks.append(Chunk(**json.loads(line)))
+                    row = json.loads(line)
+                    if not load_chunk_text:
+                        row = {
+                            **row,
+                            "text": "",
+                            "source_path": row.get("source_path", ""),
+                            "metadata": {},
+                        }
+                    chunks.append(Chunk(**row))
         metadata_path = index_dir / "metadata.json"
         metadata = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.exists() else {}
         instance = cls.__new__(cls)

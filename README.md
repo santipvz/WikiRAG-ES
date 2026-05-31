@@ -23,8 +23,8 @@ consultas y juicios de relevancia expertos.
 ## Instalación
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+python3.12 -m venv .venv312
+source .venv312/bin/activate
 pip install -e .
 ```
 
@@ -56,34 +56,36 @@ mitex chat \
   --topics-report data/reports/topics.json
 ```
 
-El índice de referencia se construye a partir de 100 000 documentos de MIRACL-es (ver
-"Flujo recomendado"). El paquete del corpus está en
-`data/reports/miracl_es_corpus_package.tar.gz`.
+El dataset de entrega (`MITEX_DATA.tar.gz`) contiene un corpus local de **1 000 000**
+documentos MIRACL-es, el índice `data/indexes/default` con **1 140 063 chunks** y el
+paquete `data/reports/miracl_es_corpus_package.tar.gz` con corpus, evaluación,
+tópicos y manifiesto.
 
 ## Flujo recomendado
 
 ```bash
 # 1. Descargar corpus MIRACL-es (Wikipedia en español)
 mitex acquire-corpus \
-  --corpus-output data/processed/miracl_es_corpus.jsonl \
+  --corpus-output data/processed/miracl_es_corpus_1M.jsonl \
   --eval-output data/reports/miracl_es_eval.jsonl \
-  --limit 100000 --eval-limit 200
+  --limit 1000000 --eval-limit 200
 
-# 2. Construir índice FAISS + BM25 (100 000 documentos)
+# 2. Construir índice FAISS + BM25 (1 000 000 documentos)
 #    --index-type flat (exacto, por defecto) o hnsw (ANN aproximado, más rápido a gran escala)
 mitex build-index \
-  --corpus data/processed/miracl_es_corpus.jsonl \
+  --corpus data/processed/miracl_es_corpus_1M.jsonl \
   --index-dir data/indexes/default \
   --index-type flat
 
 # 3. Modelado de tópicos offline
+#    En la entrega se proporciona topics.json generado sobre un subconjunto de 100 198 documentos.
 mitex topics \
-  --corpus data/processed/miracl_es_corpus.jsonl \
+  --corpus data/processed/miracl_es_corpus_1M.jsonl \
   --output data/reports/topics.json
 
 # 4. Empaquetar corpus para entrega
 mitex package-corpus \
-  --corpus data/processed/miracl_es_corpus.jsonl \
+  --corpus data/processed/miracl_es_corpus_1M.jsonl \
   --eval data/reports/miracl_es_eval.jsonl \
   --topics-report data/reports/topics.json \
   --output data/reports/miracl_es_corpus_package.tar.gz
@@ -125,6 +127,7 @@ mitex ask \
 ```bash
 python3 -m compileall src
 PYTHONPATH=src pytest
+ruff check .
 ```
 
 Evaluación automática con las consultas etiquetadas del corpus:
@@ -132,24 +135,24 @@ Evaluación automática con las consultas etiquetadas del corpus:
 ```bash
 mitex eval-ir-file --index-dir data/indexes/default \
   --queries data/reports/miracl_es_eval.jsonl \
-  --mode lexical --k 10 --limit 200 \
-  --output data/reports/eval_lexical.json
+  --mode lexical --k 10 --limit 50 \
+  --output data/reports/doc_eval_lexical.json
 
 mitex eval-ir-file --index-dir data/indexes/default \
   --queries data/reports/miracl_es_eval.jsonl \
-  --mode semantic --k 10 --limit 200 \
-  --output data/reports/eval_semantic.json
+  --mode semantic --k 10 --limit 50 \
+  --output data/reports/doc_eval_semantic.json
 
 mitex eval-ir-file --index-dir data/indexes/default \
   --queries data/reports/miracl_es_eval.jsonl \
-  --mode hybrid --k 10 --limit 200 \
-  --output data/reports/eval_hybrid.json
+  --mode hybrid --k 10 --limit 50 \
+  --output data/reports/doc_eval_hybrid.json
 
 # Comparativa con reranking cross-encoder sobre la fusión híbrida
 mitex eval-ir-file --index-dir data/indexes/default \
   --queries data/reports/miracl_es_eval.jsonl \
-  --mode hybrid --k 10 --limit 200 --rerank \
-  --output data/reports/eval_hybrid_rerank.json
+  --mode hybrid --k 10 --limit 50 --rerank \
+  --output data/reports/doc_eval_hybrid_rerank.json
 ```
 
 ## Configuración (variables de entorno)
@@ -171,7 +174,7 @@ En el chat interactivo, escribe `nuevo` para reiniciar la memoria conversacional
 
 ```bash
 mitex build-turbovec-index \
-  --corpus data/processed/miracl_es_corpus.jsonl \
+  --corpus data/processed/miracl_es_corpus_1M.jsonl \
   --index-dir data/indexes/default_turbovec --bit-width 4
 
 mitex bench-turbovec \
@@ -179,7 +182,7 @@ mitex bench-turbovec \
   --turbovec-index-dir data/indexes/default_turbovec \
   --queries data/reports/miracl_es_eval.jsonl \
   --limit 50 --k 10 \
-  --output data/reports/turbovec_benchmark.json
+  --output data/reports/doc_turbovec_benchmark.json
 ```
 
 ## Informe

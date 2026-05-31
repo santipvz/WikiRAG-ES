@@ -1,50 +1,106 @@
-"""Benchmark de latencia y recall del índice ANN HNSW frente al FAISS Flat exacto.
+"""Benchmark de latencia y recall del índice ANN HNSW frente a FAISS Flat."""
 
-Requiere haber construido ambos índices sobre los mismos vectores:
-    mitex build-index --corpus <corpus> --index-dir data/indexes/default_100k --index-type flat
-    # y un índice hnsw con los mismos embeddings (ver informe / README)
+from __future__ import annotations
 
-Uso: PYTHONPATH=src python scripts/bench_ann_hnsw.py
-"""
-import json, time
+import argparse
+import json
+import time
 from pathlib import Path
-import numpy as np, faiss
+
+import faiss
+import numpy as np
 from sentence_transformers import SentenceTransformer
 
-Q = Path("data/reports/miracl_es_eval_100k.jsonl")
-rows = [json.loads(l) for l in Q.read_text(encoding="utf-8").splitlines() if l.strip()]
-queries = [r["query"] for r in rows]
 
-model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-qemb = model.encode(queries, normalize_embeddings=True, show_progress_bar=False).astype("float32")
+DEFAULT_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
-flat = faiss.read_index("data/indexes/default_100k/faiss.index")
-hnsw = faiss.read_index("data/indexes/default_100k_hnsw/faiss.index")
-K = 10
 
-def bench(index, name):
-    # warmup
-    index.search(qemb[:5], K)
-    t0 = time.perf_counter()
-    D, I = index.search(qemb, K)
-    dt = time.perf_counter() - t0
-    return I, dt
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--queries", type=Path, default=Path("data/reports/miracl_es_eval.jsonl"))
+    parser.add_argument("--flat-index", type=Path, default=Path("data/indexes/default/faiss.index"))
+    parser.add_argument(
+        "--hnsw-index", type=Path, default=Path("data/indexes/default_hnsw/faiss.index")
+    )
+    parser.add_argument("--output", type=Path, default=Path("data/reports/ann_hnsw_vs_flat.json"))
+    parser.add_argument("--k", type=int, default=10)
+    parser.add_argument("--limit", type=int, default=200)
+    parser.add_argument("--model", default=DEFAULT_MODEL)
+    return parser.parse_args()
 
-flat_I, flat_dt = bench(flat, "flat")
-hnsw_I, hnsw_dt = bench(hnsw, "hnsw")
 
-# Recall del ANN respecto al exacto (solape de top-10)
-overlap = np.mean([len(set(flat_I[i]) & set(hnsw_I[i])) / K for i in range(len(queries))])
-top1_match = np.mean([flat_I[i][0] == hnsw_I[i][0] for i in range(len(queries))])
+def read_queries(path: Path, limit: int) -> list[str]:
+    rows: list[dict] = []
+    with path.open("r", encoding="utf-8") as file:
+        for line_number, line in enumerate(file, start=1):
+            if line_number > limit:
+                break
+            if line.strip():
+                rows.append(json.loads(line))
+    return [str(row["query"]) for row in rows]
 
-n = len(queries)
-result = {
-    "queries": n, "k": K,
-    "flat": {"total_s": round(flat_dt,4), "avg_ms": round(flat_dt/n*1000,3)},
-    "hnsw": {"total_s": round(hnsw_dt,4), "avg_ms": round(hnsw_dt/n*1000,3)},
-    "speedup": round(flat_dt/hnsw_dt, 2),
-    "ann_recall@10_vs_exact": round(float(overlap), 4),
-    "ann_top1_match": round(float(top1_match), 4),
-}
-print(json.dumps(result, indent=2))
-Path("data/reports/ann_hnsw_vs_flat_100k.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+
+def bench(index: faiss.Index, query_embeddings: np.ndarray, k: int) -> tuple[np.ndarray, float]:
+    index.search(query_embeddings[: min(5, len(query_embeddings))], k)
+    start = time.perf_counter()
+    _, indexes = index.search(query_embeddings, k)
+    seconds = time.perf_counter() - start
+    return indexes, seconds
+
+
+def main() -> None:
+    args = parse_args()
+    missing = [path for path in (args.queries, args.flat_index, args.hnsw_index) if not path.exists()]
+    if missing:
+        missing_text = "\n".join(f"- {path}" for path in missing)
+        raise SystemExit(
+            "Faltan artefactos para el benchmark HNSW:\n"
+            f"{missing_text}\n"
+            "Construye el índice HNSW con: "
+            "mitex build-index --corpus data/processed/miracl_es_corpus_1M.jsonl "
+            "--index-dir data/indexes/default_hnsw --index-type hnsw"
+        )
+
+    queries = read_queries(args.queries, args.limit)
+    model = SentenceTransformer(args.model)
+    query_embeddings = model.encode(
+        queries, normalize_embeddings=True, show_progress_bar=False
+    ).astype("float32")
+
+    flat = faiss.read_index(str(args.flat_index))
+    hnsw = faiss.read_index(str(args.hnsw_index))
+    flat_indexes, flat_seconds = bench(flat, query_embeddings, args.k)
+    hnsw_indexes, hnsw_seconds = bench(hnsw, query_embeddings, args.k)
+
+    overlap = np.mean(
+        [
+            len(set(flat_indexes[index]) & set(hnsw_indexes[index])) / args.k
+            for index in range(len(queries))
+        ]
+    )
+    top1_match = np.mean(
+        [flat_indexes[index][0] == hnsw_indexes[index][0] for index in range(len(queries))]
+    )
+
+    result = {
+        "queries": len(queries),
+        "k": args.k,
+        "flat": {
+            "total_s": round(flat_seconds, 4),
+            "avg_ms": round(flat_seconds / len(queries) * 1000, 3),
+        },
+        "hnsw": {
+            "total_s": round(hnsw_seconds, 4),
+            "avg_ms": round(hnsw_seconds / len(queries) * 1000, 3),
+        },
+        "speedup": round(flat_seconds / hnsw_seconds, 2),
+        "ann_recall@10_vs_exact": round(float(overlap), 4),
+        "ann_top1_match": round(float(top1_match), 4),
+    }
+    print(json.dumps(result, indent=2))
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(result, indent=2), encoding="utf-8")
+
+
+if __name__ == "__main__":
+    main()

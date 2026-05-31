@@ -57,22 +57,45 @@ class HybridIndex:
             pickle.dump(self.bm25, file)
 
     @classmethod
-    def load(cls, index_dir: Path) -> "HybridIndex":
+    def load(
+        cls,
+        index_dir: Path,
+        *,
+        load_chunk_text: bool = True,
+        load_embeddings: bool = False,
+        load_faiss: bool = True,
+        load_bm25: bool = True,
+    ) -> "HybridIndex":
         chunks: list[Chunk] = []
         with (index_dir / "chunks.jsonl").open("r", encoding="utf-8") as file:
             for line in file:
                 row = json.loads(line)
+                if not load_chunk_text:
+                    row = {
+                        **row,
+                        "text": "",
+                        "source_path": row.get("source_path", ""),
+                        "metadata": {},
+                    }
                 chunks.append(Chunk(**row))
-        embeddings = np.load(index_dir / "embeddings.npy")
         instance = cls.__new__(cls)
         instance.chunks = chunks
-        instance.embeddings = embeddings.astype("float32")
-        instance.faiss_index = faiss.read_index(str(index_dir / "faiss.index"))
-        with (index_dir / "bm25.pkl").open("rb") as file:
-            instance.bm25 = pickle.load(file)
+        instance.embeddings = (
+            np.load(index_dir / "embeddings.npy").astype("float32") if load_embeddings else None
+        )
+        instance.faiss_index = (
+            faiss.read_index(str(index_dir / "faiss.index")) if load_faiss else None
+        )
+        if load_bm25:
+            with (index_dir / "bm25.pkl").open("rb") as file:
+                instance.bm25 = pickle.load(file)
+        else:
+            instance.bm25 = None
         return instance
 
     def semantic_search(self, query_embedding: np.ndarray, top_k: int) -> list[RetrievalResult]:
+        if self.faiss_index is None:
+            raise RuntimeError("FAISS index was not loaded")
         scores, indexes = self.faiss_index.search(query_embedding.astype("float32"), top_k)
         results: list[RetrievalResult] = []
         for rank, (idx, score) in enumerate(zip(indexes[0], scores[0]), start=1):
@@ -86,8 +109,14 @@ class HybridIndex:
         return results
 
     def lexical_search(self, query: str, top_k: int) -> list[RetrievalResult]:
+        if self.bm25 is None:
+            raise RuntimeError("BM25 index was not loaded")
         scores = self.bm25.get_scores(simple_tokenize(query))
-        ranked = np.argsort(scores)[::-1][:top_k]
+        if top_k >= len(scores):
+            ranked = np.argsort(scores)[::-1]
+        else:
+            candidates = np.argpartition(scores, -top_k)[-top_k:]
+            ranked = candidates[np.argsort(scores[candidates])[::-1]]
         return [
             RetrievalResult(
                 chunk=self.chunks[int(idx)], score=float(scores[idx]), source="lexical", rank=rank

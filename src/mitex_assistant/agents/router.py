@@ -19,6 +19,21 @@ VALID_ACTIONS = {"rag", "web", "summary", "rag_topics", "date"}
 HISTORY_TURNS = 4
 
 
+def deterministic_route(query: str) -> str | None:
+    lowered = query.lower()
+    if re.search(r"\b(resume|resumen|sintetiza|ideas principales)\b", lowered):
+        return "summary"
+    if re.search(
+        r"\b(que dia es hoy|qué dia es hoy|qué día es hoy|que fecha es hoy|"
+        r"qué fecha es hoy|fecha actual|fecha de hoy|dia actual|día actual)\b",
+        lowered,
+    ):
+        return "date"
+    if re.search(r"\b(topico|topicos|tema|temas|cluster)\b", lowered):
+        return "rag_topics"
+    return None
+
+
 @dataclass(frozen=True)
 class AgentResponse:
     answer: str
@@ -106,18 +121,10 @@ class AssistantAgent:
     # Enrutado
     # ------------------------------------------------------------------
     def _route(self, query: str) -> str:
-        lowered = query.lower()
         # Atajos deterministas para disparadores explicitos (rapidos y sin coste LLM).
-        if re.search(r"\b(resume|resumen|sintetiza|ideas principales)\b", lowered):
-            return "summary"
-        if re.search(
-            r"\b(que dia es hoy|qué dia es hoy|qué día es hoy|que fecha es hoy|"
-            r"qué fecha es hoy|fecha actual|fecha de hoy|dia actual|día actual)\b",
-            lowered,
-        ):
-            return "date"
-        if re.search(r"\b(topico|topicos|tema|temas|cluster)\b", lowered):
-            return "rag_topics"
+        deterministic = deterministic_route(query)
+        if deterministic is not None:
+            return deterministic
         # Caso ambiguo: el LLM elige entre las herramientas restantes.
         if self.use_llm_router:
             return self._llm_route(query)

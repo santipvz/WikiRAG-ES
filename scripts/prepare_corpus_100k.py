@@ -9,6 +9,9 @@ cero (descargando de HuggingFace):
 
 Uso: python scripts/prepare_corpus_100k.py
 """
+
+from __future__ import annotations
+
 import json
 from pathlib import Path
 
@@ -22,8 +25,12 @@ CORPUS_OUT.parent.mkdir(parents=True, exist_ok=True)
 EVAL_OUT.parent.mkdir(parents=True, exist_ok=True)
 
 # Conjunto de docs relevantes de la evaluacion (para garantizar qrels en el corpus)
-eval_rows = [json.loads(l) for l in EVAL_SRC.read_text(encoding="utf-8").splitlines() if l.strip()]
-wanted = {d for row in eval_rows for d in row["relevant_doc_ids"]}
+eval_rows = [
+    json.loads(line)
+    for line in EVAL_SRC.read_text(encoding="utf-8").splitlines()
+    if line.strip()
+]
+wanted = {doc_id for row in eval_rows for doc_id in row["relevant_doc_ids"]}
 
 included = set()
 regular = 0
@@ -33,15 +40,17 @@ with SRC.open("r", encoding="utf-8") as fin, CORPUS_OUT.open("w", encoding="utf-
         if not line.strip():
             continue
         doc = json.loads(line)
-        did = doc["doc_id"]
+        doc_id = doc["doc_id"]
         keep_regular = regular < LIMIT
-        keep_eval = did in wanted and did not in included
+        keep_eval = doc_id in wanted and doc_id not in included
         if keep_regular:
             fout.write(line)
-            included.add(did); regular += 1
+            included.add(doc_id)
+            regular += 1
         elif keep_eval:
             fout.write(line)
-            included.add(did); extra_eval += 1
+            included.add(doc_id)
+            extra_eval += 1
         # parar cuando tenemos los 100k regulares y ya pasamos a recoger evals;
         # seguimos escaneando hasta agotar wanted para no perder qrels
         if regular >= LIMIT and wanted.issubset(included):
@@ -50,12 +59,12 @@ with SRC.open("r", encoding="utf-8") as fin, CORPUS_OUT.open("w", encoding="utf-
 # Reconstruir eval alineada al subconjunto 100k
 kept = []
 for row in eval_rows:
-    rel = [d for d in row["relevant_doc_ids"] if d in included]
-    if rel:
-        kept.append({**row, "relevant_doc_ids": rel})
-with EVAL_OUT.open("w", encoding="utf-8") as f:
+    relevant_doc_ids = [doc_id for doc_id in row["relevant_doc_ids"] if doc_id in included]
+    if relevant_doc_ids:
+        kept.append({**row, "relevant_doc_ids": relevant_doc_ids})
+with EVAL_OUT.open("w", encoding="utf-8") as file:
     for row in kept:
-        f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        file.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 print(f"corpus_docs={regular + extra_eval} (regular={regular}, extra_eval={extra_eval})")
 print(f"eval_queries_kept={len(kept)} / {len(eval_rows)}")

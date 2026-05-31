@@ -13,7 +13,7 @@ from mitex_assistant.retrieval.hybrid import HybridRetriever
 def evaluate_ir_file(
     index_dir: Path,
     queries_path: Path,
-    embedding_model: EmbeddingModel,
+    embedding_model: EmbeddingModel | None,
     mode: str = "hybrid",
     k: int = 10,
     limit: int | None = None,
@@ -23,10 +23,20 @@ def evaluate_ir_file(
 ) -> dict:
     if mode not in {"hybrid", "semantic", "lexical"}:
         raise ValueError("mode must be one of: hybrid, semantic, lexical")
+    if mode in {"hybrid", "semantic"} and embedding_model is None:
+        raise ValueError("embedding_model is required for hybrid and semantic modes")
 
-    index = HybridIndex.load(index_dir)
-    retriever = HybridRetriever(
-        index, embedding_model, reranker=reranker, rerank_top_k=rerank_top_k
+    index = HybridIndex.load(
+        index_dir,
+        load_chunk_text=False,
+        load_embeddings=False,
+        load_faiss=mode in {"hybrid", "semantic"},
+        load_bm25=mode in {"hybrid", "lexical"},
+    )
+    retriever = (
+        HybridRetriever(index, embedding_model, reranker=reranker, rerank_top_k=rerank_top_k)
+        if mode == "hybrid"
+        else None
     )
     metrics: list[IRMetrics] = []
     per_query: list[dict] = []
@@ -36,8 +46,10 @@ def evaluate_ir_file(
         query = str(row["query"])
         relevant_doc_ids = set(row.get("relevant_doc_ids", []))
         if mode == "hybrid":
+            assert retriever is not None
             results = retriever.retrieve(query, top_k=k)
         elif mode == "semantic":
+            assert embedding_model is not None
             query_embedding = embedding_model.encode([query])
             results = index.semantic_search(query_embedding, top_k=k)
         else:

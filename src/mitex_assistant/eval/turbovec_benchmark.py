@@ -25,8 +25,14 @@ def benchmark_turbovec_against_faiss(
         rows = rows[:limit]
     queries = [str(row["query"]) for row in rows]
     query_embeddings = embedding_model.encode(queries) if queries else np.empty((0, 0), dtype="float32")
-    faiss_index = HybridIndex.load(faiss_index_dir)
-    turbovec_index = TurboVecIndex.load(turbovec_index_dir)
+    faiss_index = HybridIndex.load(
+        faiss_index_dir,
+        load_chunk_text=False,
+        load_embeddings=False,
+        load_faiss=True,
+        load_bm25=False,
+    )
+    turbovec_index = TurboVecIndex.load(turbovec_index_dir, load_chunk_text=False)
 
     faiss_metrics = []
     turbovec_metrics = []
