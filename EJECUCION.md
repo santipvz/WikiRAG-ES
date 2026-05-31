@@ -1,4 +1,4 @@
-# Guía de ejecución: MITEX Assistant
+# Guía de ejecución: WikiRAG-ES
 
 Guía práctica para levantar y probar el asistente RAG sobre MIRACL-es (Wikipedia en
 español). Para la arquitectura y la cobertura del enunciado, ver `README.md`.
@@ -38,12 +38,12 @@ pip install -e ".[turbovec]"
 
 ## 3. Inicio rápido (índice ya construido)
 
-Tras descomprimir `MITEX_DATA.tar.gz`, el índice de entrega queda en
+Tras descomprimir `WIKIRAG_DATA.tar.gz`, el índice de entrega queda en
 `data/indexes/default/` y el informe de tópicos en `data/reports/topics.json`:
 
 ```bash
 source .venv312/bin/activate
-PYTHONPATH=src mitex chat \
+PYTHONPATH=src wikirag chat \
   --index-dir data/indexes/default \
   --topics-report data/reports/topics.json
 ```
@@ -58,32 +58,32 @@ En el chat: escribe `nuevo` para reiniciar la memoria conversacional y `salir` p
 source .venv312/bin/activate
 
 # 1) Descargar corpus + evaluación (Wikipedia ES, qrels expertos)
-PYTHONPATH=src mitex acquire-corpus \
+PYTHONPATH=src wikirag acquire-corpus \
   --corpus-output data/processed/miracl_es_corpus_1M.jsonl \
   --eval-output data/reports/miracl_es_eval.jsonl \
   --limit 1000000 --eval-limit 200
 
 # 2) Construir índice FAISS (exacto) + BM25
-PYTHONPATH=src mitex build-index \
+PYTHONPATH=src wikirag build-index \
   --corpus data/processed/miracl_es_corpus_1M.jsonl \
   --index-dir data/indexes/default \
   --index-type flat
 
-#    (opcional) índice ANN aproximado HNSW, no se incluye en MITEX_DATA por tamaño
-PYTHONPATH=src mitex build-index \
+#    (opcional) índice ANN aproximado HNSW, no se incluye en WIKIRAG_DATA por tamaño
+PYTHONPATH=src wikirag build-index \
   --corpus data/processed/miracl_es_corpus_1M.jsonl \
   --index-dir data/indexes/default_hnsw \
   --index-type hnsw
 
 # 3) Modelado de tópicos offline (BERTopic)
 #    La entrega proporciona topics.json generado sobre 100 198 documentos.
-PYTHONPATH=src mitex topics \
+PYTHONPATH=src wikirag topics \
   --corpus data/processed/miracl_es_corpus_1M.jsonl \
   --output data/reports/topics.json \
   --limit 100198
 
 # 4) Chatear
-PYTHONPATH=src mitex chat \
+PYTHONPATH=src wikirag chat \
   --index-dir data/indexes/default \
   --topics-report data/reports/topics.json
 ```
@@ -93,7 +93,7 @@ PYTHONPATH=src mitex chat \
 ## 5. Consulta puntual (sin entrar al chat)
 
 ```bash
-PYTHONPATH=src mitex ask \
+PYTHONPATH=src wikirag ask \
   --index-dir data/indexes/default \
   --topics-report data/reports/topics.json \
   "¿Cómo se convirtió Egipto en musulmán?"
@@ -109,10 +109,10 @@ Q=data/reports/miracl_es_eval.jsonl
 
 # IR: léxico vs semántico vs híbrido (50 queries documentadas, k=10)
 for mode in lexical semantic hybrid; do
-  PYTHONPATH=src mitex eval-ir-file --index-dir $IDX --queries $Q \
+  PYTHONPATH=src wikirag eval-ir-file --index-dir $IDX --queries $Q \
     --mode $mode --k 10 --limit 50 --output data/reports/doc_eval_$mode.json
 done
-PYTHONPATH=src mitex eval-ir-file --index-dir $IDX --queries $Q \
+PYTHONPATH=src wikirag eval-ir-file --index-dir $IDX --queries $Q \
   --mode hybrid --k 10 --limit 50 --rerank \
   --output data/reports/doc_eval_hybrid_rerank.json
 
@@ -120,10 +120,10 @@ PYTHONPATH=src mitex eval-ir-file --index-dir $IDX --queries $Q \
 PYTHONPATH=src python scripts/bench_ann_hnsw.py --limit 50
 
 # Benchmark de cuantización TurboVec (memoria)
-PYTHONPATH=src mitex build-turbovec-index \
+PYTHONPATH=src wikirag build-turbovec-index \
   --corpus data/processed/miracl_es_corpus_1M.jsonl \
   --index-dir data/indexes/default_turbovec --bit-width 4
-PYTHONPATH=src mitex bench-turbovec \
+PYTHONPATH=src wikirag bench-turbovec \
   --faiss-index-dir $IDX \
   --turbovec-index-dir data/indexes/default_turbovec \
   --queries $Q --limit 50 --k 10 \
@@ -154,16 +154,16 @@ ruff check .
 
 | Variable | Por defecto | Para qué |
 |----------|-------------|----------|
-| `MITEX_OLLAMA_MODEL` | `gemma4:e4b` | Modelo LLM de Ollama |
-| `MITEX_USE_RERANKER` | `false` | Activa el cross-encoder en chat/ask |
-| `MITEX_USE_LLM_ROUTER` | `true` | El LLM elige herramienta ante ambigüedad |
-| `MITEX_INDEX_TYPE` | `flat` | `flat` (exacto) o `hnsw` (ANN) |
-| `MITEX_WEB_SEARCH_RESULTS` | `4` | Nº de resultados web a integrar |
+| `WIKIRAG_OLLAMA_MODEL` | `gemma4:e4b` | Modelo LLM de Ollama |
+| `WIKIRAG_USE_RERANKER` | `false` | Activa el cross-encoder en chat/ask |
+| `WIKIRAG_USE_LLM_ROUTER` | `true` | El LLM elige herramienta ante ambigüedad |
+| `WIKIRAG_INDEX_TYPE` | `flat` | `flat` (exacto) o `hnsw` (ANN) |
+| `WIKIRAG_WEB_SEARCH_RESULTS` | `4` | Nº de resultados web a integrar |
 
 Ejemplo con reranking activado:
 
 ```bash
-MITEX_USE_RERANKER=true PYTHONPATH=src mitex chat \
+WIKIRAG_USE_RERANKER=true PYTHONPATH=src wikirag chat \
   --index-dir data/indexes/default \
   --topics-report data/reports/topics.json
 ```
@@ -172,7 +172,7 @@ MITEX_USE_RERANKER=true PYTHONPATH=src mitex chat \
 
 ## 9. Queries de ejemplo para probar cada herramienta
 
-Dentro de `mitex chat`:
+Dentro de `wikirag chat`:
 
 | Tipo | Ejemplo de consulta | Herramienta activada |
 |------|---------------------|----------------------|

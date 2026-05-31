@@ -7,11 +7,11 @@ from pathlib import Path
 import faiss
 import numpy as np
 
-from mitex_assistant.data.models import Chunk
-from mitex_assistant.indexing.embeddings import EmbeddingModel
-from mitex_assistant.indexing.turbovec_store import TurboVecIndex
-from mitex_assistant.indexing.vector_store import build_faiss_index
-from mitex_assistant.data.jsonl import read_jsonl
+from wikirag_es.data.models import Chunk
+from wikirag_es.indexing.embeddings import EmbeddingModel
+from wikirag_es.indexing.turbovec_store import TurboVecIndex
+from wikirag_es.indexing.vector_store import build_faiss_index
+from wikirag_es.data.jsonl import read_jsonl
 
 def bench_faiss(index: faiss.Index, query_embeddings: np.ndarray, k: int) -> float:
     # warmup

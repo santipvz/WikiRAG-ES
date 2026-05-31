@@ -1,5 +1,5 @@
-from mitex_assistant.data.models import Document
-from mitex_assistant.indexing.chunking import chunk_document
+from wikirag_es.data.models import Document
+from wikirag_es.indexing.chunking import chunk_document
 
 
 def _doc(text: str) -> Document:

@@ -1,6 +1,6 @@
-from mitex_assistant.agents.tools import DateTool, MONTHS_ES, WEEKDAYS_ES
-from mitex_assistant.agents.web_search import WebSearchTool
-from mitex_assistant.summarization.extractive import split_sentences
+from wikirag_es.agents.tools import DateTool, MONTHS_ES, WEEKDAYS_ES
+from wikirag_es.agents.web_search import WebSearchTool
+from wikirag_es.summarization.extractive import split_sentences
 
 
 def test_date_tool_returns_spanish_format() -> None:

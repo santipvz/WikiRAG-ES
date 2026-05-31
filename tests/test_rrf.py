@@ -1,5 +1,5 @@
-from mitex_assistant.data.models import Chunk, RetrievalResult
-from mitex_assistant.retrieval.hybrid import reciprocal_rank_fusion
+from wikirag_es.data.models import Chunk, RetrievalResult
+from wikirag_es.retrieval.hybrid import reciprocal_rank_fusion
 
 
 def _result(chunk_id: str, rank: int, source: str) -> RetrievalResult:

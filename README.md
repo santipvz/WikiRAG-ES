@@ -1,6 +1,6 @@
-# MITEX Assistant: Asistente RAG sobre Wikipedia en español
+# WikiRAG-ES: Asistente RAG sobre Wikipedia en español
 
-Implementación modular de un asistente inteligente para el proyecto final de Minería de Textos (MITEX).
+Implementación modular de un asistente inteligente para el proyecto final de Minería de Textos.
 
 El caso de uso es un **asistente de consulta enciclopédica en español** basado en
 MIRACL-es, un corpus real de recuperación sobre **Wikipedia en español** con
@@ -35,8 +35,8 @@ pip install -e ".[turbovec]"
 ```
 
 El proveedor LLM por defecto es Ollama y el modelo usado en las pruebas es `gemma4:e4b`.
-Se puede cambiar con `MITEX_OLLAMA_MODEL`. El endpoint por defecto es
-`MITEX_OLLAMA_URL=http://localhost:11434`.
+Se puede cambiar con `WIKIRAG_OLLAMA_MODEL`. El endpoint por defecto es
+`WIKIRAG_OLLAMA_URL=http://localhost:11434`.
 
 ```bash
 ollama pull gemma4:e4b
@@ -51,12 +51,12 @@ chat sobre un índice ya compilado. Asegúrate de tener Python 3 y Ollama en mar
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ollama pull gemma4:e4b
-mitex chat \
+wikirag chat \
   --index-dir data/indexes/default \
   --topics-report data/reports/topics.json
 ```
 
-El dataset de entrega (`MITEX_DATA.tar.gz`) contiene un corpus local de **1 000 000**
+El dataset de entrega (`WIKIRAG_DATA.tar.gz`) contiene un corpus local de **1 000 000**
 documentos MIRACL-es, el índice `data/indexes/default` con **1 140 063 chunks**,
 `data/reports/topics.json` y el paquete `data/reports/miracl_es_corpus_package.tar.gz`
 con corpus, evaluación y manifiesto.
@@ -65,33 +65,33 @@ con corpus, evaluación y manifiesto.
 
 ```bash
 # 1. Descargar corpus MIRACL-es (Wikipedia en español)
-mitex acquire-corpus \
+wikirag acquire-corpus \
   --corpus-output data/processed/miracl_es_corpus_1M.jsonl \
   --eval-output data/reports/miracl_es_eval.jsonl \
   --limit 1000000 --eval-limit 200
 
 # 2. Construir índice FAISS + BM25 (1 000 000 documentos)
 #    --index-type flat (exacto, por defecto) o hnsw (ANN aproximado, más rápido a gran escala)
-mitex build-index \
+wikirag build-index \
   --corpus data/processed/miracl_es_corpus_1M.jsonl \
   --index-dir data/indexes/default \
   --index-type flat
 
 # 3. Modelado de tópicos offline
 #    En la entrega se proporciona topics.json generado sobre un subconjunto de 100 198 documentos.
-mitex topics \
+wikirag topics \
   --corpus data/processed/miracl_es_corpus_1M.jsonl \
   --output data/reports/topics.json \
   --limit 100198
 
 # 4. Empaquetar corpus para entrega (los tópicos se entregan como JSON aparte)
-mitex package-corpus \
+wikirag package-corpus \
   --corpus data/processed/miracl_es_corpus_1M.jsonl \
   --eval data/reports/miracl_es_eval.jsonl \
   --output data/reports/miracl_es_corpus_package.tar.gz
 
 # 5. Chat interactivo
-mitex chat \
+wikirag chat \
   --index-dir data/indexes/default \
   --topics-report data/reports/topics.json
 ```
@@ -99,7 +99,7 @@ mitex chat \
 También puedes usar una consulta puntual:
 
 ```bash
-mitex ask \
+wikirag ask \
   --index-dir data/indexes/default \
   --topics-report data/reports/topics.json \
   "¿Cuál es el río más largo de España?"
@@ -133,24 +133,24 @@ ruff check .
 Evaluación automática con las consultas etiquetadas del corpus:
 
 ```bash
-mitex eval-ir-file --index-dir data/indexes/default \
+wikirag eval-ir-file --index-dir data/indexes/default \
   --queries data/reports/miracl_es_eval.jsonl \
   --mode lexical --k 10 --limit 50 \
   --output data/reports/doc_eval_lexical.json
 
-mitex eval-ir-file --index-dir data/indexes/default \
+wikirag eval-ir-file --index-dir data/indexes/default \
   --queries data/reports/miracl_es_eval.jsonl \
   --mode semantic --k 10 --limit 50 \
   --output data/reports/doc_eval_semantic.json
 
-mitex eval-ir-file --index-dir data/indexes/default \
+wikirag eval-ir-file --index-dir data/indexes/default \
   --queries data/reports/miracl_es_eval.jsonl \
   --mode hybrid --k 10 --limit 50 \
   --output data/reports/doc_eval_hybrid.json
 
 # Comparativa con reranking cross-encoder sobre la fusión híbrida.
 # Este comando genera el informe opcional de reranking.
-mitex eval-ir-file --index-dir data/indexes/default \
+wikirag eval-ir-file --index-dir data/indexes/default \
   --queries data/reports/miracl_es_eval.jsonl \
   --mode hybrid --k 10 --limit 50 --rerank \
   --output data/reports/doc_eval_hybrid_rerank.json
@@ -160,25 +160,25 @@ mitex eval-ir-file --index-dir data/indexes/default \
 
 | Variable | Por defecto | Descripción |
 |----------|-------------|-------------|
-| `MITEX_INDEX_TYPE` | `flat` | Tipo de índice FAISS: `flat` (exacto) o `hnsw` (ANN). |
-| `MITEX_HNSW_M` | `32` | Grado del grafo HNSW cuando `index_type=hnsw`. |
-| `MITEX_USE_RERANKER` | `false` | Activa el cross-encoder reranker en chat/ask. |
-| `MITEX_RERANKER_MODEL` | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` | Modelo cross-encoder multilingüe. |
-| `MITEX_RERANK_TOP_K` | `5` | Nº de resultados finales tras el reranking. |
-| `MITEX_USE_LLM_ROUTER` | `true` | El LLM desambigua la herramienta ante consultas ambiguas. |
-| `MITEX_WEB_SEARCH_RESULTS` | `4` | Nº de resultados web a integrar. |
-| `MITEX_OLLAMA_MODEL` | `gemma4:e4b` | Modelo LLM servido por Ollama. |
+| `WIKIRAG_INDEX_TYPE` | `flat` | Tipo de índice FAISS: `flat` (exacto) o `hnsw` (ANN). |
+| `WIKIRAG_HNSW_M` | `32` | Grado del grafo HNSW cuando `index_type=hnsw`. |
+| `WIKIRAG_USE_RERANKER` | `false` | Activa el cross-encoder reranker en chat/ask. |
+| `WIKIRAG_RERANKER_MODEL` | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` | Modelo cross-encoder multilingüe. |
+| `WIKIRAG_RERANK_TOP_K` | `5` | Nº de resultados finales tras el reranking. |
+| `WIKIRAG_USE_LLM_ROUTER` | `true` | El LLM desambigua la herramienta ante consultas ambiguas. |
+| `WIKIRAG_WEB_SEARCH_RESULTS` | `4` | Nº de resultados web a integrar. |
+| `WIKIRAG_OLLAMA_MODEL` | `gemma4:e4b` | Modelo LLM servido por Ollama. |
 
 En el chat interactivo, escribe `nuevo` para reiniciar la memoria conversacional y `salir` para terminar.
 
 ## TurboQuant (benchmark opcional)
 
 ```bash
-mitex build-turbovec-index \
+wikirag build-turbovec-index \
   --corpus data/processed/miracl_es_corpus_1M.jsonl \
   --index-dir data/indexes/default_turbovec --bit-width 4
 
-mitex bench-turbovec \
+wikirag bench-turbovec \
   --faiss-index-dir data/indexes/default \
   --turbovec-index-dir data/indexes/default_turbovec \
   --queries data/reports/miracl_es_eval.jsonl \
@@ -188,9 +188,9 @@ mitex bench-turbovec \
 
 ## Informe
 
-El informe está en `docs/informe_mitex.tex`. Para generar el PDF:
+El informe está en `docs/informe_wikirag.tex`. Para generar el PDF:
 
 ```bash
-pdflatex -interaction=nonstopmode -output-directory docs docs/informe_mitex.tex
-pdflatex -interaction=nonstopmode -output-directory docs docs/informe_mitex.tex
+pdflatex -interaction=nonstopmode -output-directory docs docs/informe_wikirag.tex
+pdflatex -interaction=nonstopmode -output-directory docs docs/informe_wikirag.tex
 ```

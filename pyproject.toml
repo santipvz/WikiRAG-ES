@@ -1,7 +1,7 @@
 [project]
-name = "mitex-assistant"
+name = "wikirag-es"
 version = "0.1.0"
-description = "Asistente inteligente modular para el proyecto final de Mineria de Textos"
+description = "Asistente RAG local sobre Wikipedia en español"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -40,7 +40,7 @@ turbovec = [
 ]
 
 [project.scripts]
-mitex = "mitex_assistant.cli.main:main"
+wikirag = "wikirag_es.cli.main:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

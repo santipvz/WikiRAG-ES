@@ -10,8 +10,11 @@ __pycache__/
 
 # LaTeX build artifacts
 docs/*.aux
+docs/*.fdb_latexmk
+docs/*.fls
 docs/*.log
 docs/*.out
+docs/*.synctex.gz
 docs/*.toc
 
 # Local/generated data
@@ -24,4 +27,5 @@ data/reports/*
 !data/indexes/.gitkeep
 !data/reports/.gitkeep
 *.txt
+!requirements.txt
 MITEX_DATA.tar.gz

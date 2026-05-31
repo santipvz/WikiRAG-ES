@@ -1,5 +1,5 @@
-from mitex_assistant.agents.router import AssistantAgent
-from mitex_assistant.agents.web_search import WebSearchTool
+from wikirag_es.agents.router import AssistantAgent
+from wikirag_es.agents.web_search import WebSearchTool
 
 
 class FakeLLM:

@@ -57,7 +57,7 @@ def main() -> None:
             "Faltan artefactos para el benchmark HNSW:\n"
             f"{missing_text}\n"
             "Construye el índice HNSW con: "
-            "mitex build-index --corpus data/processed/miracl_es_corpus_1M.jsonl "
+            "wikirag build-index --corpus data/processed/miracl_es_corpus_1M.jsonl "
             "--index-dir data/indexes/default_hnsw --index-type hnsw"
         )
 

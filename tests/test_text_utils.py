@@ -1,4 +1,4 @@
-from mitex_assistant.utils.text import normalize_text, strip_prompt_injection
+from wikirag_es.utils.text import normalize_text, strip_prompt_injection
 
 
 def test_normalize_text_collapses_whitespace() -> None:

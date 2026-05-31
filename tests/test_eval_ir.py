@@ -1,5 +1,5 @@
-import mitex_assistant.eval.batch as batch
-from mitex_assistant.eval.ir import average_metrics, evaluate_ids
+import wikirag_es.eval.batch as batch
+from wikirag_es.eval.ir import average_metrics, evaluate_ids
 
 
 def test_evaluate_ids_computes_precision_recall_and_mrr() -> None:

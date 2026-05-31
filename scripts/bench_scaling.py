@@ -6,10 +6,10 @@ from pathlib import Path
 
 import numpy as np
 
-from mitex_assistant.data.models import Chunk
-from mitex_assistant.eval.batch import evaluate_ir_file
-from mitex_assistant.indexing.embeddings import EmbeddingModel
-from mitex_assistant.indexing.vector_store import build_hybrid_index
+from wikirag_es.data.models import Chunk
+from wikirag_es.eval.batch import evaluate_ir_file
+from wikirag_es.indexing.embeddings import EmbeddingModel
+from wikirag_es.indexing.vector_store import build_hybrid_index
 
 def run():
     index_dir = Path("data/indexes/default")
