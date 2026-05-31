@@ -315,6 +315,57 @@ La progresión por capas evidencia el aporte de cada componente sobre el \textit
 \FloatBarrier
 
 %% =========================================================================
+\section{Escalabilidad RAG según el Tamaño del Corpus}
+%% =========================================================================
+
+Para justificar el uso de Big Data en arquitecturas RAG, se ha diseñado un benchmark de escalabilidad que evalúa cómo se comporta la calidad y el rendimiento del sistema híbrido al variar el volumen de documentos base. Se fragmentó el corpus local en colecciones de $100\,000$, $500\,000$ y la totalidad de $1\,140\,063$ fragmentos.
+
+\begin{table}[htbp]
+\centering
+\rowcolors{2}{tabheader!40}{white}
+\begin{tabularx}{\textwidth}{X c c c c}
+\toprule
+\rowcolor{tabheader} \textbf{Tamaño del Corpus (chunks)} & \textbf{P@10} & \textbf{R@10} & \textbf{MRR} & \textbf{Latencia Media} \\
+\midrule
+100\,000 & 0,045 & 0,146 & 0,157 & 313 ms \\
+500\,000 & 0,085 & 0,370 & 0,373 & 1546 ms \\
+1\,140\,063 & 0,109 & 0,482 & 0,542 & 3520 ms \\
+\bottomrule
+\end{tabularx}
+\caption{Evolución del desempeño en función de la cantidad de documentos procesados. (Recuperador Híbrido, 50 queries, k=10)}
+\end{table}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{scaling_plot.pdf}
+    \caption{Relación entre calidad de recuperación (MRR) y degradación del rendimiento (latencia) al incrementar el tamaño del corpus.}
+\end{figure}
+
+\textbf{Análisis de los resultados:}
+\begin{enumerate}
+    \item \textbf{Mejora de la calidad de recuperación:} Se observa empíricamente que, a medida que el modelo dispone de más texto fuente, la probabilidad de recuperar el fragmento correcto aumenta. Escalar de 100k a 1.1M \textit{chunks} eleva el MRR de 0,157 a 0,542 y mejora significativamente el \textit{Recall}.
+    \item \textbf{Impacto en el rendimiento:} Como era de esperar, la latencia de la búsqueda exacta semántica (\code{IndexFlatIP}) y léxica crece linealmente $O(N)$, alcanzando un promedio de 3.5 segundos por consulta al procesar el millón de documentos.
+    \item \textbf{Justificación arquitectónica:} Este aumento en la latencia al evaluar grandes volúmenes de documentos justifica la integración de las optimizaciones descritas en las siguientes secciones: la \textbf{Indexación HNSW} (para reducir el tiempo de búsqueda en FAISS) y la cuantización \textbf{TurboVec} (para optimizar el uso de memoria RAM).
+\end{enumerate}
+
+\subsection{Comparativa de Técnicas Semánticas}
+
+Para ilustrar el impacto de las técnicas de optimización, se ha medido el tiempo de búsqueda puramente semántica (excluyendo BM25) para las tres arquitecturas indexadas implementadas en este proyecto.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{scaling_techniques_plot.pdf}
+    \caption{Escalabilidad de latencia por arquitectura semántica (FAISS Exacto vs FAISS HNSW vs TurboVec Cuantizado).}
+\end{figure}
+
+Esta gráfica de rendimiento demuestra empíricamente las dos vías de optimización documentadas en las secciones posteriores:
+\begin{itemize}
+    \item \textbf{FAISS HNSW:} Esta técnica de búsqueda aproximada basada en grafos permite mantener una latencia estable ($\sim$0.1 ms) incluso al escalar a 1 millón de vectores, a cambio de una pequeña reducción en el \textit{Recall}. Resulta útil para despliegues donde prima el tiempo de respuesta.
+    \item \textbf{TurboVec Cuantizado (4 bits):} Aunque mantiene la complejidad lineal $O(N)$ de una búsqueda plana, mejora el tiempo de ejecución frente al índice exacto en \code{float32} (20 ms frente a 42 ms para 1.1M de vectores) debido a la eficiencia de las operaciones SIMD. Principalmente, aporta una reducción de la huella de memoria superior al 90\%, siendo una buena alternativa para máquinas con pocos recursos.
+\end{itemize}
+
+\FloatBarrier
+%% =========================================================================
 \section{Indexación Aproximada (HNSW)}
 %% =========================================================================
 
@@ -466,5 +517,82 @@ Revolución Industrial. La industria textil también fue la primera en utilizar 
 
 El sistema desarrollado culmina en un asistente documental funcional que integra todas las técnicas obligatorias del enunciado: embeddings, tópicos, resumen extractivo, LLM, RAG y agentes.
 A través de experimentación empírica, se comprobó que la Recuperación Aumentada (RAG) depende críticamente de la calidad del recuperador y de la trazabilidad de las fuentes. Gracias a la compresión vectorial (TurboVec), la carga parcial de índices y el enrutamiento agencial, el proyecto queda preparado para una defensa reproducible y para escalar con mejoras claras en el motor léxico.
+
+%% =========================================================================
+\section*{Bibliografía y Referencias}
+\addcontentsline{toc}{section}{Bibliografía y Referencias}
+%% =========================================================================
+
+\begin{thebibliography}{9}
+
+\bibitem{miracl}
+Zhang, X., et al. (2022). \textit{MIRACL: A Multilingual Retrieval Dataset Covering 18 Diverse Languages}. Transactions of the Association for Computational Linguistics.
+
+\bibitem{sbert}
+Reimers, N., \& Gurevych, I. (2019). \textit{Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks}. EMNLP.
+
+\bibitem{faiss}
+Johnson, J., Douze, M., \& Jégou, H. (2019). \textit{Billion-scale similarity search with GPUs}. IEEE Transactions on Big Data.
+
+\bibitem{hnsw}
+Malkov, Y. A., \& Yashunin, D. A. (2018). \textit{Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs}. IEEE TPAMI.
+
+\bibitem{bm25}
+Robertson, S., \& Zaragoza, H. (2009). \textit{The Probabilistic Relevance Framework: BM25 and Beyond}. Foundations and Trends in Information Retrieval.
+
+\bibitem{rrf}
+Cormack, G. V., Clarke, C. L., \& Buettcher, S. (2009). \textit{Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods}. SIGIR.
+
+\bibitem{bertopic}
+Grootendorst, M. (2022). \textit{BERTopic: Neural topic modeling with a class-based TF-IDF procedure}. arXiv preprint.
+
+\bibitem{textrank}
+Mihalcea, R., \& Tarau, P. (2004). \textit{TextRank: Bringing Order into Text}. EMNLP.
+
+\end{thebibliography}
+
+\newpage
+\appendix
+%% =========================================================================
+\section{Apéndice: Manual de Reproducción y Ejecución}
+%% =========================================================================
+
+Para facilitar la corrección y evaluación de esta práctica, se detalla a continuación el flujo completo de comandos necesarios para replicar los resultados desde la terminal. Toda la infraestructura se maneja mediante el CLI unificado \code{mitex}.
+
+\subsection*{A. Generación del Sistema desde Cero (1 Millón de Documentos)}
+\begin{verbatim}
+# 1) Descargar corpus + qrels de validación
+PYTHONPATH=src mitex acquire-corpus \
+  --corpus-output data/processed/miracl_es_corpus_1M.jsonl \
+  --eval-output data/reports/miracl_es_eval.jsonl \
+  --limit 1000000 \
+  --eval-limit 200
+
+# 2) Construir Índice Híbrido (FAISS Exacto + BM25)
+PYTHONPATH=src mitex build-index \
+  --corpus data/processed/miracl_es_corpus_1M.jsonl \
+  --index-dir data/indexes/default \
+  --index-type flat
+
+# 3) Generar Modelo de Tópicos Offline
+PYTHONPATH=src mitex topics \
+  --corpus data/processed/miracl_es_corpus_1M.jsonl \
+  --output data/reports/topics.json
+\end{verbatim}
+
+\subsection*{B. Arranque del Agente RAG Conversacional}
+Se requiere tener un servidor Ollama activo de fondo con el modelo \code{gemma4:e4b}.
+\begin{verbatim}
+PYTHONPATH=src mitex chat \
+  --index-dir data/indexes/default \
+  --topics-report data/reports/topics.json
+\end{verbatim}
+
+\subsection*{C. Reproducción de Benchmarks de Escalabilidad}
+Los scripts automatizados que generan la gráfica de degradación léxica y la gráfica comparativa de técnicas de vectorización (Secciones 7 y 7.1) pueden ser invocados directamente si el corpus base está construido:
+\begin{verbatim}
+PYTHONPATH=src python scripts/bench_scaling.py
+PYTHONPATH=src python scripts/bench_scaling_techniques.py
+\end{verbatim}
 
 \end{document}

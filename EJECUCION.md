@@ -127,6 +127,14 @@ PYTHONPATH=src mitex bench-turbovec \
   --turbovec-index-dir data/indexes/default_turbovec \
   --queries $Q --limit 50 --k 10 \
   --output data/reports/doc_turbovec_benchmark.json
+
+# Benchmark de escalabilidad RAG (Latencia Híbrido)
+PYTHONPATH=src python scripts/bench_scaling.py
+PYTHONPATH=src python scripts/plot_scaling.py
+
+# Benchmark de comparativa semántica (Flat vs HNSW vs TurboVec)
+PYTHONPATH=src python scripts/bench_scaling_techniques.py
+PYTHONPATH=src python scripts/plot_scaling_techniques.py
 ```
 
 ---

@@ -73,44 +73,6 @@ def acquire_corpus_cmd(
     click.echo(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
-@main.command("acquire-amazon-reviews")
-@click.option(
-    "--corpus-output",
-    type=click.Path(path_type=Path),
-    default=Path("data/processed/amazon_video_games_reviews.jsonl"),
-    show_default=True,
-)
-@click.option(
-    "--eval-output",
-    type=click.Path(path_type=Path),
-    default=Path("data/reports/amazon_video_games_eval.jsonl"),
-    show_default=True,
-)
-@click.option("--category", default="Video_Games", show_default=True)
-@click.option("--limit", type=int, default=100_000, show_default=True)
-@click.option("--eval-limit", type=int, default=200, show_default=True)
-@click.option("--min-chars", type=int, default=40, show_default=True)
-def acquire_amazon_reviews_cmd(
-    corpus_output: Path,
-    eval_output: Path,
-    category: str,
-    limit: int,
-    eval_limit: int,
-    min_chars: int,
-) -> None:
-    """Descarga Amazon Reviews 2023 para recomendacion conversacional."""
-    from mitex_assistant.acquisition.amazon_reviews import acquire_amazon_reviews
-
-    payload = acquire_amazon_reviews(
-        corpus_output,
-        eval_output,
-        category=category,
-        limit=limit,
-        eval_limit=eval_limit,
-        min_chars=min_chars,
-    )
-    click.echo(json.dumps(payload, ensure_ascii=False, indent=2))
-
 
 @main.command("package-corpus")
 @click.option("--corpus", "corpus_path", type=click.Path(exists=True, path_type=Path), required=True)
