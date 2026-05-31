@@ -1,4 +1,4 @@
-# Guía de ejecución — MITEX Assistant
+# Guía de ejecución: MITEX Assistant
 
 Guía práctica para levantar y probar el asistente RAG sobre MIRACL-es (Wikipedia en
 español). Para la arquitectura y la cobertura del enunciado, ver `README.md`.
@@ -7,9 +7,9 @@ español). Para la arquitectura y la cobertura del enunciado, ver `README.md`.
 
 ## 1. Requisitos
 
-- **Python 3.12** (PyTorch no publica *wheels* para 3.14; usa 3.12).
+- **Python 3.12** (PyTorch no publica *wheels* para 3.14, usa 3.12).
 - **Ollama** en marcha con el modelo `gemma4:e4b`.
-- GPU NVIDIA opcional (acelera el indexado; funciona también en CPU).
+- GPU NVIDIA opcional (acelera el indexado y funciona también en CPU).
 
 ```bash
 # Modelo LLM local
@@ -25,10 +25,10 @@ ollama pull gemma4:e4b      # descarga el modelo (~9.6 GB)
 # Crear entorno con Python 3.12
 python3.12 -m venv .venv312
 source .venv312/bin/activate
-pip install -e .
+pip install -r requirements.txt
 
 # (opcional) extra de cuantización para el benchmark TurboVec
-pip install turbovec
+pip install -e ".[turbovec]"
 ```
 
 > Si usas `mise`: `mise install python@3.12` y luego
@@ -69,7 +69,7 @@ PYTHONPATH=src mitex build-index \
   --index-dir data/indexes/default \
   --index-type flat
 
-#    (opcional) índice ANN aproximado HNSW; no se incluye en MITEX_DATA por tamaño
+#    (opcional) índice ANN aproximado HNSW, no se incluye en MITEX_DATA por tamaño
 PYTHONPATH=src mitex build-index \
   --corpus data/processed/miracl_es_corpus_1M.jsonl \
   --index-dir data/indexes/default_hnsw \
@@ -79,7 +79,8 @@ PYTHONPATH=src mitex build-index \
 #    La entrega proporciona topics.json generado sobre 100 198 documentos.
 PYTHONPATH=src mitex topics \
   --corpus data/processed/miracl_es_corpus_1M.jsonl \
-  --output data/reports/topics.json
+  --output data/reports/topics.json \
+  --limit 100198
 
 # 4) Chatear
 PYTHONPATH=src mitex chat \

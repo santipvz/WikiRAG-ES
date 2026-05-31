@@ -28,7 +28,7 @@ def evaluate_ir_file(
 
     index = HybridIndex.load(
         index_dir,
-        load_chunk_text=False,
+        load_chunk_text=reranker is not None,
         load_embeddings=False,
         load_faiss=mode in {"hybrid", "semantic"},
         load_bm25=mode in {"hybrid", "lexical"},

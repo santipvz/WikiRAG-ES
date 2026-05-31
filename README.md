@@ -1,4 +1,4 @@
-# MITEX Assistant — Asistente RAG sobre Wikipedia en español
+# MITEX Assistant: Asistente RAG sobre Wikipedia en español
 
 Implementación modular de un asistente inteligente para el proyecto final de Minería de Textos (MITEX).
 
@@ -16,7 +16,7 @@ consultas y juicios de relevancia expertos.
 - `summarization`: resumen extractivo con TextRank y selección MMR.
 - `retrieval`: recuperación híbrida FAISS+BM25 con Reciprocal Rank Fusion (RRF) y reranking opcional con cross-encoder.
 - `llm`: cliente LLM configurable (Ollama por defecto).
-- `agents`: router agencial (regex + desambiguación con el LLM en JSON) con herramientas RAG, resumen, tópicos, fecha y búsqueda web; memoria conversacional.
+- `agents`: router agencial (regex + desambiguación con el LLM en JSON) con herramientas RAG, resumen, tópicos, fecha, búsqueda web y memoria conversacional.
 - `eval`: métricas de recuperación (Precision@k, Recall@k, MRR) y benchmark de cuantización.
 - `cli`: comandos de ingesta, indexado, tópicos, chat y evaluación.
 
@@ -25,17 +25,17 @@ consultas y juicios de relevancia expertos.
 ```bash
 python3.12 -m venv .venv312
 source .venv312/bin/activate
-pip install -e .
+pip install -r requirements.txt
 ```
 
 Extra opcional para TurboQuant:
 
 ```bash
-pip install -e .[turbovec]
+pip install -e ".[turbovec]"
 ```
 
 El proveedor LLM por defecto es Ollama y el modelo usado en las pruebas es `gemma4:e4b`.
-Se puede cambiar con `MITEX_OLLAMA_MODEL`; el endpoint por defecto es
+Se puede cambiar con `MITEX_OLLAMA_MODEL`. El endpoint por defecto es
 `MITEX_OLLAMA_URL=http://localhost:11434`.
 
 ```bash
@@ -49,7 +49,7 @@ chat sobre un índice ya compilado. Asegúrate de tener Python 3 y Ollama en mar
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
-pip install -e .
+pip install -r requirements.txt
 ollama pull gemma4:e4b
 mitex chat \
   --index-dir data/indexes/default \
@@ -57,9 +57,9 @@ mitex chat \
 ```
 
 El dataset de entrega (`MITEX_DATA.tar.gz`) contiene un corpus local de **1 000 000**
-documentos MIRACL-es, el índice `data/indexes/default` con **1 140 063 chunks** y el
-paquete `data/reports/miracl_es_corpus_package.tar.gz` con corpus, evaluación,
-tópicos y manifiesto.
+documentos MIRACL-es, el índice `data/indexes/default` con **1 140 063 chunks**,
+`data/reports/topics.json` y el paquete `data/reports/miracl_es_corpus_package.tar.gz`
+con corpus, evaluación y manifiesto.
 
 ## Flujo recomendado
 
@@ -81,13 +81,13 @@ mitex build-index \
 #    En la entrega se proporciona topics.json generado sobre un subconjunto de 100 198 documentos.
 mitex topics \
   --corpus data/processed/miracl_es_corpus_1M.jsonl \
-  --output data/reports/topics.json
+  --output data/reports/topics.json \
+  --limit 100198
 
-# 4. Empaquetar corpus para entrega
+# 4. Empaquetar corpus para entrega (los tópicos se entregan como JSON aparte)
 mitex package-corpus \
   --corpus data/processed/miracl_es_corpus_1M.jsonl \
   --eval data/reports/miracl_es_eval.jsonl \
-  --topics-report data/reports/topics.json \
   --output data/reports/miracl_es_corpus_package.tar.gz
 
 # 5. Chat interactivo
@@ -148,7 +148,8 @@ mitex eval-ir-file --index-dir data/indexes/default \
   --mode hybrid --k 10 --limit 50 \
   --output data/reports/doc_eval_hybrid.json
 
-# Comparativa con reranking cross-encoder sobre la fusión híbrida
+# Comparativa con reranking cross-encoder sobre la fusión híbrida.
+# Este comando genera el informe opcional de reranking.
 mitex eval-ir-file --index-dir data/indexes/default \
   --queries data/reports/miracl_es_eval.jsonl \
   --mode hybrid --k 10 --limit 50 --rerank \

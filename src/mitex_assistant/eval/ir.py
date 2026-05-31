@@ -21,12 +21,14 @@ def evaluate_retrieval_by_doc(results: list[RetrievalResult], relevant_doc_ids: 
 
 
 def evaluate_ids(retrieved_ids: list[str], relevant_ids: set[str], k: int) -> IRMetrics:
+    if k <= 0:
+        raise ValueError("k must be positive")
     top_ids = _unique_ids(retrieved_ids)[:k]
-    if not top_ids:
+    if not top_ids or not relevant_ids:
         return IRMetrics(0.0, 0.0, 0.0)
     hits = [retrieved_id in relevant_ids for retrieved_id in top_ids]
-    precision = sum(hits) / len(top_ids)
-    recall = sum(hits) / len(relevant_ids) if relevant_ids else 0.0
+    precision = sum(hits) / k
+    recall = sum(hits) / len(relevant_ids)
     reciprocal_rank = 0.0
     for index, hit in enumerate(hits, start=1):
         if hit:

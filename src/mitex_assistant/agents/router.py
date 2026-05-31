@@ -29,7 +29,7 @@ def deterministic_route(query: str) -> str | None:
         lowered,
     ):
         return "date"
-    if re.search(r"\b(topico|topicos|tema|temas|cluster)\b", lowered):
+    if re.search(r"\b(t[oó]pico|t[oó]picos|tema|temas|cluster|clusters)\b", lowered):
         return "rag_topics"
     return None
 

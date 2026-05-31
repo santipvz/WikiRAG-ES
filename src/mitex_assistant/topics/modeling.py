@@ -15,8 +15,17 @@ SPANISH_STOPWORDS = [
 ]
 
 
-def run_topic_modeling(corpus_path: Path, output_path: Path, method: str = "auto") -> dict:
-    docs = [row["text"] for row in read_jsonl(corpus_path)]
+def run_topic_modeling(
+    corpus_path: Path, output_path: Path, method: str = "auto", limit: int | None = None
+) -> dict:
+    if limit is not None and limit <= 0:
+        raise ValueError("limit must be positive")
+
+    docs: list[str] = []
+    for row_number, row in enumerate(read_jsonl(corpus_path), start=1):
+        if limit is not None and row_number > limit:
+            break
+        docs.append(row["text"])
     if len(docs) < 2:
         raise ValueError("Topic modeling needs at least two documents")
 

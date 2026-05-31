@@ -159,11 +159,12 @@ def build_turbovec_index_cmd(corpus_path: Path, index_dir: Path, bit_width: str)
 @click.option(
     "--method", type=click.Choice(["auto", "bertopic", "nmf"]), default="auto", show_default=True
 )
-def topics_cmd(corpus_path: Path, output_path: Path, method: str) -> None:
+@click.option("--limit", type=int, default=None, help="Maximo de documentos para modelado.")
+def topics_cmd(corpus_path: Path, output_path: Path, method: str, limit: int | None) -> None:
     """Ejecuta modelado de topicos offline."""
     from mitex_assistant.topics.modeling import run_topic_modeling
 
-    payload = run_topic_modeling(corpus_path, output_path, method=method)
+    payload = run_topic_modeling(corpus_path, output_path, method=method, limit=limit)
     click.echo(
         f"Topicos guardados en {output_path}. Metodo: {payload['method']}. "
         f"Documentos: {payload['num_documents']}"

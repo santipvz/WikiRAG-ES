@@ -36,6 +36,7 @@ def test_regex_route_detects_summary_and_date() -> None:
     agent = _agent(FakeLLM())
     assert agent._route("Resume este documento") == "summary"
     assert agent._route("¿Qué día es hoy?") == "date"
+    assert agent._route("¿Qué tópicos hay en el corpus?") == "rag_topics"
 
 
 def test_llm_route_picks_web_when_tool_available() -> None:
