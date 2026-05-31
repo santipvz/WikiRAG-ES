@@ -78,7 +78,7 @@ Se ha diseñado e implementado un \textbf{asistente documental local} basado en 
   \item \textbf{Escala de indexación:} 1\,140\,063 \textit{chunks} procesados e indexados.
   \item \textbf{Motor LLM:} \code{gemma4:e4b} operando íntegramente en local a través de Ollama.
   \item \textbf{Recuperación:} Sistema híbrido que fusiona recuperación semántica (FAISS) y léxica (BM25) mediante \textit{Reciprocal Rank Fusion} (RRF), con \textit{reranking} opcional por \textit{cross-encoder}.
-  \item \textbf{Eficiencia:} Carga parcial de índices por modo de evaluación, ruta rápida para herramientas deterministas y cuantización vectorial TurboVec que reduce la huella persistida de vectores en un 93,4\,\%.
+  \item \textbf{Eficiencia:} Carga parcial de índices por modo de evaluación, ruta rápida para herramientas deterministas y cuantización vectorial TurboVec que reduce la memoria utilizada por los vectores en un 93,4\,\%.
 \end{itemize}
 
 %% =========================================================================
@@ -425,7 +425,7 @@ Escalar a millones de documentos presenta una barrera física: los vectores \tex
 \rowcolors{2}{tabheader!40}{white}
 \begin{tabularx}{\textwidth}{X c c c c}
 \toprule
-\rowcolor{tabheader} \textbf{Tipo de Índice vectorial} & \textbf{P@10} & \textbf{R@10} & \textbf{MRR} & \textbf{Huella persistida} \\
+\rowcolor{tabheader} \textbf{Tipo de Índice vectorial} & \textbf{P@10} & \textbf{R@10} & \textbf{MRR} & \textbf{Memoria utilizada} \\
 \midrule
 Índice FAISS crudo (\textit{float32}) & 0,113 & 0,451 & 0,451 & 3,50\,GB \\
 Índice TurboVec Cuantizado (4-bit) & 0,111 & 0,447 & 0,456 & 232,6\,MB \\
@@ -455,7 +455,7 @@ Escalar a millones de documentos presenta una barrera física: los vectores \tex
 \end{tikzpicture}
 \end{center}
 
-TurboVec retiene el desempeño semántico casi a la perfección (caída de \textit{Recall@10} inferior a medio punto) y reduce la memoria utilizada por los vectores de 3,50\,GB a 232,6\,MB ($-$93,4\,\%). Extrapolado a colecciones mayores, este factor de compresión es clave para desplegar el asistente en \textit{hardware} de consumo.
+TurboVec retiene el desempeño semántico casi a la perfección (caída de \textit{Recall@10} inferior a medio punto) y reduce la memoria utilizada por los vectores de 3,50\,GB a 232,6\,MB ($-$93,4\,\%). Extrapolado a colecciones mayores, este factor de compresión es clave para desplegar el asistente en ordenadores convencionales.
 
 \FloatBarrier
 
@@ -558,7 +558,7 @@ Revolución Industrial. La industria textil también fue la primera en utilizar 
   \item \textbf{Cobertura parcial de Wikipedia:} El experimento documentado se ejecutó sobre 1\,000\,000 documentos MIRACL-es, un subconjunto amplio pero todavía inferior a los 10,4 millones disponibles en la colección completa. Si el usuario pregunta por un artículo que no está en el subconjunto, el motor recuperará el documento más similar posible y el LLM deberá declarar falta de información cuando el contexto no baste.
   \item \textbf{Límites de memoria del Motor Léxico (OOM):} \code{rank-bm25} instancia las frecuencias léxicas directamente en RAM, por lo que la búsqueda léxica no escala de forma indefinida. A escala de decenas de millones de documentos se requeriría un motor invertido en disco (p.\,ej. Elasticsearch/Lucene).
   \item \textbf{Cuello de botella en la latencia Híbrida (BM25):} A pesar de utilizar índices ultrarrápidos como HNSW (FAISS) o TurboVec para la búsqueda semántica, la latencia total por consulta del agente en modo híbrido ronda los 4 segundos. Esto se debe a que siempre se debe esperar a los resultados de la búsqueda léxica (BM25), la cual tarda casi 4 segundos en iterar sobre 1.14 millones de documentos en Python puro. La lentitud general observada no es atribuible a los modelos vectoriales aproximados o cuantizados (que resuelven en $\sim$1\,ms), sino a la etapa léxica obligatoria para la fusión RRF.
-  \item \textbf{Latencia de Inferencia del LLM Local:} Independientemente de la velocidad de recuperación de documentos (que se resuelve en milisegundos usando FAISS o TurboVec), la interacción completa del chat añade una latencia significativa de entre 30 y 50 segundos. Este cuello de botella no radica en la recuperación de información, sino en el procesamiento del contexto inyectado (miles de tokens extraídos de los documentos de Wikipedia) y la subsiguiente generación de la respuesta elaborada palabra por palabra por parte del modelo \code{gemma4:e4b} ejecutado en hardware de consumo.
+  \item \textbf{Latencia de Inferencia del LLM Local:} Independientemente de la velocidad de recuperación de documentos (que se resuelve en milisegundos usando FAISS o TurboVec), la interacción completa del chat añade una latencia significativa de entre 30 y 50 segundos. Este cuello de botella no radica en la recuperación de información, sino en el procesamiento del contexto inyectado (miles de tokens extraídos de los documentos de Wikipedia) y la subsiguiente generación de la respuesta elaborada palabra por palabra por parte del modelo \code{gemma4:e4b} ejecutado en un ordenador normal.
 \end{enumerate}
 
 %% =========================================================================
