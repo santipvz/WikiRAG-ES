@@ -174,8 +174,9 @@ def topics_cmd(corpus_path: Path, output_path: Path, method: str, limit: int | N
 @main.command("ask")
 @click.option("--index-dir", type=click.Path(exists=True, path_type=Path), required=True)
 @click.option("--topics-report", type=click.Path(exists=True, path_type=Path), default=None)
+@click.option("--turbovec", is_flag=True, default=False, help="Usar indice TurboVec en lugar de FAISS+BM25.")
 @click.argument("query")
-def ask_cmd(index_dir: Path, topics_report: Path | None, query: str) -> None:
+def ask_cmd(index_dir: Path, topics_report: Path | None, turbovec: bool, query: str) -> None:
     """Responde una consulta puntual."""
     from wikirag_es.agents.router import deterministic_route
     from wikirag_es.agents.tools import DateTool
@@ -183,7 +184,7 @@ def ask_cmd(index_dir: Path, topics_report: Path | None, query: str) -> None:
     if deterministic_route(query) == "date":
         click.echo(DateTool().run())
         return
-    agent = _build_agent(index_dir, topics_report=topics_report)
+    agent = _build_agent(index_dir, topics_report=topics_report, is_turbovec=turbovec)
     response = agent.answer(query)
     click.echo(response.answer)
     if response.sources:
@@ -195,10 +196,11 @@ def ask_cmd(index_dir: Path, topics_report: Path | None, query: str) -> None:
 @main.command("chat")
 @click.option("--index-dir", type=click.Path(exists=True, path_type=Path), required=True)
 @click.option("--topics-report", type=click.Path(exists=True, path_type=Path), default=None)
-def chat_cmd(index_dir: Path, topics_report: Path | None) -> None:
+@click.option("--turbovec", is_flag=True, default=False, help="Usar indice TurboVec en lugar de FAISS+BM25.")
+def chat_cmd(index_dir: Path, topics_report: Path | None, turbovec: bool) -> None:
     """Abre un chat interactivo con el asistente."""
     click.echo("Cargando modelo de embeddings e indice (puede tardar unos segundos)...")
-    agent = _build_agent(index_dir, topics_report=topics_report)
+    agent = _build_agent(index_dir, topics_report=topics_report, is_turbovec=turbovec)
     click.echo(
         "\nChat WikiRAG-ES listo. Escribe tu pregunta y pulsa Enter.\n"
         "Comandos: 'nuevo' reinicia la conversacion, 'salir' termina."
@@ -332,7 +334,7 @@ def bench_turbovec_cmd(
     click.echo(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
-def _build_agent(index_dir: Path, topics_report: Path | None = None):
+def _build_agent(index_dir: Path, topics_report: Path | None = None, is_turbovec: bool = False):
     from wikirag_es.agents.router import AssistantAgent
     from wikirag_es.agents.tools import (
         DateTool,
@@ -348,7 +350,12 @@ def _build_agent(index_dir: Path, topics_report: Path | None = None):
 
     settings = get_settings()
     embedding_model = EmbeddingModel(settings.embedding_model)
-    index = HybridIndex.load(index_dir, load_embeddings=False, load_faiss=True, load_bm25=True)
+    
+    if is_turbovec:
+        from wikirag_es.indexing.turbovec_store import TurboVecIndex
+        index = TurboVecIndex.load(index_dir, load_chunk_text=True)
+    else:
+        index = HybridIndex.load(index_dir, load_embeddings=False, load_faiss=True, load_bm25=True)
     reranker = None
     if settings.use_reranker:
         from wikirag_es.retrieval.reranking import CrossEncoderReranker

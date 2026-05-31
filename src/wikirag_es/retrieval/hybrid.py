@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -40,7 +40,7 @@ def reciprocal_rank_fusion(
 class HybridRetriever:
     def __init__(
         self,
-        index: HybridIndex,
+        index: Any,
         embedding_model: EmbeddingModel,
         reranker: "CrossEncoderReranker | None" = None,
         rerank_top_k: int | None = None,
@@ -55,8 +55,11 @@ class HybridRetriever:
         candidate_k = max(top_k, (self.rerank_top_k or top_k) * 2) if self.reranker else top_k
         query_embedding = self.embedding_model.encode([query])
         semantic = self.index.semantic_search(np.asarray(query_embedding), top_k=candidate_k)
-        lexical = self.index.lexical_search(query, top_k=candidate_k)
-        fused = reciprocal_rank_fusion([semantic, lexical], top_k=candidate_k)
+        if hasattr(self.index, "lexical_search"):
+            lexical = self.index.lexical_search(query, top_k=candidate_k)
+            fused = reciprocal_rank_fusion([semantic, lexical], top_k=candidate_k)
+        else:
+            fused = semantic
         if self.reranker is None:
             return fused[:top_k]
         final_k = self.rerank_top_k or top_k

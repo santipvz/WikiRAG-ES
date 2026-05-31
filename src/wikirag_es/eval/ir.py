@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 from wikirag_es.data.models import RetrievalResult
@@ -10,6 +11,7 @@ class IRMetrics:
     precision_at_k: float
     recall_at_k: float
     mrr: float
+    ndcg_at_k: float
 
 
 def evaluate_retrieval(results: list[RetrievalResult], relevant_chunk_ids: set[str], k: int) -> IRMetrics:
@@ -25,7 +27,7 @@ def evaluate_ids(retrieved_ids: list[str], relevant_ids: set[str], k: int) -> IR
         raise ValueError("k must be positive")
     top_ids = _unique_ids(retrieved_ids)[:k]
     if not top_ids or not relevant_ids:
-        return IRMetrics(0.0, 0.0, 0.0)
+        return IRMetrics(0.0, 0.0, 0.0, 0.0)
     hits = [retrieved_id in relevant_ids for retrieved_id in top_ids]
     precision = sum(hits) / k
     recall = sum(hits) / len(relevant_ids)
@@ -34,7 +36,13 @@ def evaluate_ids(retrieved_ids: list[str], relevant_ids: set[str], k: int) -> IR
         if hit:
             reciprocal_rank = 1.0 / index
             break
-    return IRMetrics(precision, recall, reciprocal_rank)
+            
+    dcg = sum(1.0 / math.log2(i + 1) for i, hit in enumerate(hits, start=1) if hit)
+    ideal_hits = min(k, len(relevant_ids))
+    idcg = sum(1.0 / math.log2(i + 1) for i in range(1, ideal_hits + 1))
+    ndcg = dcg / idcg if idcg > 0 else 0.0
+    
+    return IRMetrics(precision, recall, reciprocal_rank, ndcg)
 
 
 def _unique_ids(ids: list[str]) -> list[str]:
@@ -50,9 +58,10 @@ def _unique_ids(ids: list[str]) -> list[str]:
 
 def average_metrics(metrics: list[IRMetrics]) -> IRMetrics:
     if not metrics:
-        return IRMetrics(0.0, 0.0, 0.0)
+        return IRMetrics(0.0, 0.0, 0.0, 0.0)
     return IRMetrics(
         precision_at_k=sum(metric.precision_at_k for metric in metrics) / len(metrics),
         recall_at_k=sum(metric.recall_at_k for metric in metrics) / len(metrics),
         mrr=sum(metric.mrr for metric in metrics) / len(metrics),
+        ndcg_at_k=sum(metric.ndcg_at_k for metric in metrics) / len(metrics),
     )

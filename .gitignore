@@ -28,4 +28,5 @@ data/reports/*
 !data/reports/.gitkeep
 *.txt
 !requirements.txt
-MITEX_DATA.tar.gz
+*.tar.gz
+*.zip
