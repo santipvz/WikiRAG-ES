@@ -70,15 +70,24 @@ def _normalize(values: np.ndarray) -> np.ndarray:
 
 
 def _mmr_select(scores: dict[int, float], similarity: np.ndarray, k: int, diversity: float) -> list[int]:
-    candidates = set(scores.keys())
+    candidates = sorted(scores.keys())
     selected: list[int] = []
     while candidates and len(selected) < k:
-        best = max(candidates, key=lambda idx: _mmr_score(idx, selected, scores, similarity, diversity))
+        best = max(
+            candidates,
+            key=lambda idx: (_mmr_score(idx, selected, scores, similarity, diversity), -idx),
+        )
         selected.append(best)
         candidates.remove(best)
     return selected
 
 
-def _mmr_score(index: int, selected: list[int], scores: dict[int, float], similarity: np.ndarray, diversity: float) -> float:
+def _mmr_score(
+    index: int,
+    selected: list[int],
+    scores: dict[int, float],
+    similarity: np.ndarray,
+    diversity: float,
+) -> float:
     redundancy = max((similarity[index, other] for other in selected), default=0.0)
     return (1 - diversity) * scores[index] - diversity * redundancy

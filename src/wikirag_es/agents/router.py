@@ -21,7 +21,10 @@ HISTORY_TURNS = 4
 
 def deterministic_route(query: str) -> str | None:
     lowered = query.lower()
-    if re.search(r"\b(resume|resumen|sintetiza|ideas principales)\b", lowered):
+    if re.search(
+        r"\b(res[uú]m\w*|sintetiza\w*|s[ií]ntesis|ideas principales|sumario)\b",
+        lowered,
+    ):
         return "summary"
     if re.search(
         r"\b(que dia es hoy|qué dia es hoy|qué día es hoy|que fecha es hoy|"
@@ -29,7 +32,13 @@ def deterministic_route(query: str) -> str | None:
         lowered,
     ):
         return "date"
-    if re.search(r"\b(t[oó]pico|t[oó]picos|tema|temas|cluster|clusters)\b", lowered):
+    topic_term = re.search(r"\b(t[oó]picos?|temas|clusters?)\b", lowered)
+    topic_scope = re.search(
+        r"\b(corpus|offline|detectad[oa]s?|modelado|lista|listado|"
+        r"hay|tenemos|reporte|informe)\b",
+        lowered,
+    )
+    if topic_term and topic_scope:
         return "rag_topics"
     return None
 
@@ -66,9 +75,13 @@ class AssistantAgent:
         self.history = []
 
     def answer(self, query: str) -> AgentResponse:
+        # Los disparadores explicitos del usuario mandan sobre la reescritura
+        # y el router LLM.
+        deterministic = deterministic_route(query)
         # Memoria conversacional: reescribe seguimientos como pregunta autonoma.
-        search_query = self._rewrite_with_history(query) if self.history else query
-        action = self._route(search_query)
+        needs_rewrite = self.history and deterministic in {None, "summary"}
+        search_query = self._rewrite_with_history(query) if needs_rewrite else query
+        action = deterministic or self._route(search_query)
         response = self._dispatch(action, query, search_query)
         self.history.append((query, response.answer))
         self.history = self.history[-HISTORY_TURNS:]

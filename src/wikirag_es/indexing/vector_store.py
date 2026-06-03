@@ -112,17 +112,16 @@ class HybridIndex:
         if self.bm25 is None:
             raise RuntimeError("BM25 index was not loaded")
         scores = self.bm25.get_scores(simple_tokenize(query))
-        if top_k >= len(scores):
-            ranked = np.argsort(scores)[::-1]
-        else:
-            candidates = np.argpartition(scores, -top_k)[-top_k:]
-            ranked = candidates[np.argsort(scores[candidates])[::-1]]
+        positive = np.flatnonzero(scores > 0)
+        if len(positive) == 0:
+            return []
+        order = np.lexsort((positive, -scores[positive]))
+        ranked = positive[order[:top_k]]
         return [
             RetrievalResult(
                 chunk=self.chunks[int(idx)], score=float(scores[idx]), source="lexical", rank=rank
             )
             for rank, idx in enumerate(ranked, start=1)
-            if scores[idx] > 0
         ]
 
 

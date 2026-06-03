@@ -50,12 +50,32 @@ class TopicTool:
     def __init__(self, report_path: Path) -> None:
         self.report_path = report_path
 
-    def run(self, max_topics: int = 8) -> str:
+    def run(self, max_topics: int = 20) -> str:
         payload = json.loads(self.report_path.read_text(encoding="utf-8"))
         method = payload.get("method", "unknown")
-        topic_info = payload.get("topic_info", [])[:max_topics]
-        lines = [f"Modelado offline de topicos. Metodo: {method}."]
-        for topic in topic_info:
+        num_documents = payload.get("num_documents", "?")
+        topic_info = payload.get("topic_info", [])
+        outliers = [
+            topic for topic in topic_info if topic.get("Topic", topic.get("topic")) == -1
+        ]
+        real_topics = [
+            topic for topic in topic_info if topic.get("Topic", topic.get("topic")) != -1
+        ]
+        real_topics = sorted(
+            real_topics,
+            key=lambda topic: (-_topic_count(topic), str(topic.get("Topic", topic.get("topic", "")))),
+        )
+        shown_topics = real_topics[:max_topics]
+        outlier_count = (
+            outliers[0].get("Count", outliers[0].get("count", 0)) if outliers else 0
+        )
+        lines = [
+            f"Modelado offline de topicos. Metodo: {method}. Documentos: {num_documents}.",
+            f"Clusters detectados: {len(real_topics)} "
+            f"(+ {outlier_count} documentos outlier/sin cluster).",
+            f"Mostrando los {len(shown_topics)} clusters mas grandes:",
+        ]
+        for topic in shown_topics:
             topic_id = topic.get("Topic", topic.get("topic", "?"))
             count = topic.get("Count", topic.get("count", "?"))
             representation = topic.get("Representation") or topic.get("Name") or topic.get("Name", "")
@@ -63,6 +83,13 @@ class TopicTool:
                 representation = ", ".join(str(item) for item in representation[:8])
             lines.append(f"- Topico {topic_id} ({count} docs): {representation}")
         return "\n".join(lines)
+
+
+def _topic_count(topic: dict) -> int:
+    try:
+        return int(topic.get("Count", topic.get("count", 0)))
+    except (TypeError, ValueError):
+        return 0
 
 
 class DateTool:

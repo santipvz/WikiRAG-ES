@@ -113,7 +113,7 @@ Router Agencial & \code{agents/router.py} & Enrutado híbrido: atajos determinis
 \newpage
 \subsection{Archivos entregados}
 
-El proyecto se acompaña de los siguientes archivos, listos para su ejecución y auditoría:
+El proyecto se acompaña de los siguientes archivos:
 
 \begin{table}[htbp]
 \centering
@@ -255,14 +255,28 @@ En lugar de construir un RAG tradicional donde toda pregunta activa incondiciona
 \rowcolor{tabheader} \textbf{Herramienta} & \textbf{Patrón de activación} & \textbf{Ejecución algorítmica} \\
 \midrule
 \code{RagTool} & (Fallback por defecto) & Ejecuta FAISS y BM25, fusiona con RRF e inyecta fragmentos al LLM. \\
-\code{SummaryTool} & \textit{resume, ideas principales...} & Calcula TextRank sobre los documentos y devuelve un resumen exacto. \\
-\code{TopicTool} & \textit{tópico, tema, cluster...} & Extrae información del archivo JSON de clústeres de BERTopic. \\
+\code{SummaryTool} & \textit{resume, ideas principales...} & Calcula TextRank extractivo sobre el contexto recuperado y devuelve frases existentes. \\
+\code{TopicTool} & \textit{tópicos/clusters del corpus...} & Extrae información del archivo JSON de clústeres de BERTopic. \\
 \code{DateTool} & \textit{qué día es hoy...} & Devuelve la fecha actual formateada en español (día de la semana incluido). \\
 \code{WebSearchTool} & (Decisión del LLM) & Busca en la web (DuckDuckGo) información complementaria y la fusiona con el contexto local. \\
 \bottomrule
 \end{tabularx}
 \caption{Inventario de herramientas del Agente Router.}
 \end{table}
+
+\subsection{Resumen extractivo y determinismo}
+
+El módulo de resumen no es un resumen abstractivo generado por el LLM. Es un \textbf{resumen extractivo}: selecciona frases literales presentes en el contexto recuperado o en el fichero de entrada. La implementación se encuentra en \code{summarization/extractive.py} y combina tres pasos:
+
+\begin{enumerate}
+  \item Segmentación del texto en frases suficientemente largas.
+  \item Cálculo de embeddings por frase y construcción de un grafo de similitud coseno.
+  \item Aplicación de TextRank/PageRank para centralidad y selección con MMR para penalizar redundancia.
+\end{enumerate}
+
+Cuando el usuario pregunta \textit{``Resume lo que tengas sobre X''}, el agente primero recupera contexto con RAG y después resume ese contexto. Por tanto, el resumen es tan estable como lo sean la consulta efectiva y el contexto recuperado. Con el mismo índice, mismo \code{top\_k}, mismo historial conversacional y mismo contexto de entrada, el algoritmo extractivo debe devolver el mismo resultado. Si cambia el historial, el router reescribe la consulta de seguimiento de otra forma, se activa un índice aproximado, cambia el reranker o se recuperan fragmentos distintos, el resumen también puede cambiar.
+
+La revisión del sistema detectó dos fuentes de variabilidad que debían controlarse: la intención explícita de resumen podía perderse si la reescritura conversacional eliminaba la palabra \textit{``resume''}, y la selección MMR podía desempatar frases equivalentes sin orden estable. La corrección aplicada hace que los disparadores explícitos del usuario tengan prioridad sobre la reescritura y que los empates del resumen se resuelvan por orden de frase. Esto no convierte el RAG completo en determinista bajo cualquier configuración, pero sí hace determinista el resumen cuando recibe el mismo texto de entrada.
 
 \FloatBarrier
 \newpage
@@ -294,6 +308,52 @@ Tópicos offline entregados & BERTopic sobre 100\,198 documentos, 1\,413 filas d
 \caption{Estadísticas del corpus de entrega tras la fase de ingestión.}
 \end{table}
 
+\subsection{Auditoría del modelado de tópicos}
+
+El fichero \code{data/reports/topics.json} fue generado con BERTopic sobre 100\,198 documentos. Es importante distinguir entre \textit{clusters reales} y el identificador especial \code{-1}. En BERTopic, \code{-1} no representa un tema semántico útil, sino documentos considerados \textit{outliers} o no asignados a ningún cluster. Por tanto, el reporte actual no contiene siete tópicos: contiene \textbf{1\,412 clusters reales} más \textbf{34\,698 documentos outlier}.
+
+\begin{table}[htbp]
+\centering
+\rowcolors{2}{tabheader!40}{white}
+\begin{tabularx}{\textwidth}{X r}
+\toprule
+\rowcolor{tabheader} \textbf{Campo del reporte de tópicos} & \textbf{Valor} \\
+\midrule
+Método & BERTopic \\
+Documentos modelados & 100\,198 \\
+Filas en \code{topic\_info} & 1\,413 \\
+Clusters reales, excluyendo \code{-1} & 1\,412 \\
+Documentos outlier en \code{-1} & 34\,698 \\
+\bottomrule
+\end{tabularx}
+\caption{Lectura correcta del reporte \code{topics.json}.}
+\end{table}
+
+La confusión aparece cuando la herramienta de tópicos muestra solo los primeros resultados por brevedad: si se limita la salida a unas pocas filas y una de ellas es \code{-1}, puede parecer que el corpus tiene únicamente unos pocos tópicos útiles. La lectura correcta es que la lista presentada en chat es una \textbf{vista resumida} de los clusters mayores, no el número total de clusters generados.
+
+\begin{table}[htbp]
+\centering
+\small
+\rowcolors{2}{tabheader!40}{white}
+\begin{tabularx}{\textwidth}{r r X}
+\toprule
+\rowcolor{tabheader} \textbf{Cluster} & \textbf{Docs} & \textbf{Representación principal} \\
+\midrule
+0 & 757 & poesía, modernismo, ramón, literatura, revista, poeta \\
+1 & 660 & educación, universidad, escuelas, universidades, secundaria \\
+2 & 559 & transporte, carreteras, autobuses, tren, estación \\
+3 & 499 & cocina, gastronomía, platos, arroz, carne \\
+4 & 498 & mesoamérica, tlaxcala, pueblos, mayas, teotihuacán \\
+5 & 453 & clima, temperaturas, precipitaciones, lluvias, invierno \\
+6 & 440 & canadá, ontario, brunswick, manitoba, alberta \\
+7 & 361 & televisión, alta definición, radio, canal, tv \\
+8 & 293 & mozart, bach, schubert, johann, wolfgang \\
+9 & 277 & unidades, kilogramo, litro, sistema internacional, metro \\
+\bottomrule
+\end{tabularx}
+\caption{Diez clusters reales más grandes del reporte BERTopic, excluyendo \code{-1}.}
+\end{table}
+
 \FloatBarrier
 
 %% =========================================================================
@@ -319,6 +379,31 @@ Motor Semántico (FAISS) & 0,112 & 0,451 & 0,451 & 0,379 \\
 \caption{Métricas sobre el corpus 1M de entrega (50 \textit{queries}, $k=10$).}
 \end{table}
 
+\subsection{Qué mide cada métrica}
+
+El proyecto mide la recuperación antes de la generación del LLM. Esto es deliberado: en un sistema RAG, si el recuperador no coloca evidencia correcta en las primeras posiciones, el generador no puede responder de forma fiable aunque el modelo sea bueno.
+
+\begin{table}[htbp]
+\centering
+\small
+\rowcolors{2}{tabheader!40}{white}
+\begin{tabularx}{\textwidth}{l X X}
+\toprule
+\rowcolor{tabheader} \textbf{Métrica} & \textbf{Definición} & \textbf{Interpretación para RAG} \\
+\midrule
+\textit{Precision@k} & Proporción de resultados del top-$k$ que son relevantes. & Mide ruido en el contexto. Puede ser baja si los qrels tienen pocos relevantes por consulta. \\
+\textit{Recall@k} & Proporción de documentos relevantes esperados que aparecen en el top-$k$. & Mide cobertura; es clave para saber si el contexto contiene evidencia suficiente. \\
+\textit{MRR} & Recíproco de la posición del primer resultado relevante. & Mide si la primera evidencia útil aparece arriba, donde más influye en el prompt. \\
+\textit{nDCG@k} & Ganancia descontada normalizada por posición. & Mide calidad global del ranking, premiando relevantes en posiciones tempranas. \\
+\textit{Latencia} & Tiempo medio por consulta o por búsqueda semántica aislada. & Mide viabilidad interactiva, pero depende mucho de si se incluye BM25, FAISS, LLM o solo el índice vectorial. \\
+\textit{Memoria vectorial} & Tamaño ocupado por índices y embeddings. & Permite comparar FAISS \textit{float32} frente a cuantización TurboVec. \\
+\bottomrule
+\end{tabularx}
+\caption{Métricas implementadas y usadas en los reportes de evaluación.}
+\end{table}
+
+Además de estas métricas, el sistema podría extenderse con métricas de generación final: ROUGE o BERTScore para resumen si existieran referencias humanas, precisión de citas para comprobar si cada afirmación está soportada, \textit{faithfulness/groundedness} para medir alucinaciones, Exact Match/F1 para preguntas cerradas, latencia \textit{end-to-end} del chat y tasa de \textit{fallback} del router. No se reportan como métricas principales porque la entrega cuenta con qrels expertos de recuperación, no con respuestas humanas completas ni resúmenes de referencia.
+
 \subsection{Análisis: del baseline al sistema completo}
 
 La progresión por capas evidencia el aporte de cada componente sobre el \textit{baseline} léxico:
@@ -328,6 +413,7 @@ La progresión por capas evidencia el aporte de cada componente sobre el \textit
   \item \textbf{Coste de escala:} BM25 sobre 1\,140\,063 fragmentos es el cuello de botella de la evaluación. Por ello se implementó carga parcial de índices: el modo léxico no carga FAISS ni el modelo de embeddings, y los benchmarks no cargan textos de fragmentos cuando solo necesitan \code{doc\_id}.
   \item \textbf{Lectura del MRR (0,542):} en la muestra documentada, el primer documento relevante aparece de media alrededor de la segunda posición. Es una métrica central para RAG porque el LLM atiende preferentemente a las primeras fuentes del \textit{prompt}.
   \item \textbf{Precisión y \textit{qrels}:} \textit{Precision@10} se mantiene moderada porque MIRACL-es marca pocos documentos relevantes por consulta. Recuperar 10 implica un techo de precisión bajo por construcción, de modo que \textit{Recall@10} y MRR son indicadores más informativos.
+  \item \textbf{Impacto del Reranking (Cross-Encoder):} Al evaluar el sistema sobre el conjunto completo de validación (200 consultas), la activación de la etapa de \textit{reranking} logra una mejora sustancial adicional. El MRR asciende de 0,481 a \textbf{0,636} y el \textit{Recall@10} pasa de 0,540 a \textbf{0,640}. Esto demuestra que el modelo \textit{cross-encoder} es altamente efectivo reordenando los candidatos de la fase híbrida para situar las fuentes correctas en las primerísimas posiciones.
 \end{itemize}
 
 \FloatBarrier
@@ -382,13 +468,15 @@ HNSW representa los embeddings como un grafo navegable. En vez de comparar la co
 \toprule
 \rowcolor{tabheader} \textbf{Tamaño del índice} & \textbf{FAISS Flat} & \textbf{FAISS HNSW} & \textbf{Reducción} \\
 \midrule
-100\,000 vectores & 0,983 ms & 0,100 ms & 9,8x \\
-500\,000 vectores & 16,178 ms & 0,135 ms & 119,8x \\
-1\,140\,063 vectores & 42,035 ms & 0,096 ms & 437,9x \\
+100\,000 vectores & 5,156 ms & 0,165 ms & 31,2x \\
+500\,000 vectores & 25,720 ms & 0,415 ms & 62,0x \\
+1\,140\,063 vectores & 59,579 ms & 0,434 ms & 137,3x \\
 \bottomrule
 \end{tabularx}
-\caption{Comparativa de latencia semántica exacta frente a HNSW. Resultados obtenidos con \code{scripts/bench\_scaling\_techniques.py}, 200 consultas y $k=10$.}
+\caption{Comparativa corregida de latencia semántica exacta frente a HNSW. Se mide la mediana de ms/consulta con ejecución query-a-query, 200 consultas, $k=10$, 5 repeticiones, 1 warmup y 1 hilo FAISS.}
 \end{table}
+
+\textit{Corrección metodológica:} la tabla anterior del informe usaba una única búsqueda batched de FAISS y daba un resultado no defendible: HNSW aparecía con menos latencia en 1,14M que en 500k vectores. Se ha regenerado el benchmark midiendo cada consulta por separado, igualando la metodología entre índices, fijando un hilo de FAISS y tomando la mediana de cinco repeticiones. Con esta medición, Flat crece de forma clara con el tamaño del índice y HNSW también aumenta de 100k a 500k, quedando prácticamente estabilizado entre 500k y 1,14M por el carácter sublineal de la navegación en grafo.
 
 \begin{center}
 \begin{tikzpicture}
@@ -396,20 +484,20 @@ HNSW representa los embeddings como un grafo navegable. En vez de comparar la co
   \node[anchor=east, font=\small\bfseries] at (-0.2, 0.5) {FAISS HNSW};
 
   \fill[barred, rounded corners=2pt, drop shadow={opacity=0.3}] (0, 1.2) rectangle (10, 2.0);
-  \node[white, font=\small\bfseries] at (5, 1.6) {42,0 ms};
+  \node[white, font=\small\bfseries] at (5, 1.6) {59,6 ms};
 
-  \fill[bargreen, rounded corners=2pt, drop shadow={opacity=0.3}] (0, 0.1) rectangle (0.23, 0.9);
-  \node[right, font=\small\bfseries, bargreen] at (0.33, 0.5) {0,096 ms};
+  \fill[bargreen, rounded corners=2pt, drop shadow={opacity=0.3}] (0, 0.1) rectangle (0.07, 0.9);
+  \node[right, font=\small\bfseries, bargreen] at (0.17, 0.5) {0,434 ms};
 
   \draw[-{Latex}, thin, gray] (0,-0.2) -- (10.5,-0.2);
-  \foreach \x/\l in {0/0, 2.5/10, 5/21, 7.5/31, 10/42} {
+  \foreach \x/\l in {0/0, 2.5/15, 5/30, 7.5/45, 10/60} {
     \draw[gray] (\x,-0.25) -- (\x,-0.15);
     \node[below, font=\tiny, gray] at (\x,-0.25) {\l\,ms};
   }
 \end{tikzpicture}
 \end{center}
 
-HNSW es útil cuando el cuello de botella principal es el tiempo de respuesta. En la medición aislada de búsqueda semántica sobre 1,14 millones de vectores, redujo la latencia de 42,0 ms a 0,096 ms. La contrapartida es que la búsqueda deja de ser exacta, por lo que \code{IndexFlatIP} se mantiene como referencia reproducible y HNSW como opción de escalado.
+HNSW es útil cuando el cuello de botella principal es el tiempo de respuesta. El resultado corregido muestra que \code{IndexFlatIP} crece con el tamaño del índice porque escanea todos los vectores, mientras que HNSW explora un grafo aproximado y se mantiene en órdenes de magnitud inferiores. La contrapartida es que la búsqueda deja de ser exacta, por lo que \code{IndexFlatIP} se mantiene como referencia reproducible y HNSW como opción de escalado.
 
 \FloatBarrier
 \newpage
@@ -461,18 +549,12 @@ TurboVec retiene el desempeño semántico casi a la perfección (caída de \text
 
 \section{Comparativa de Técnicas Semánticas}
 
-Una vez explicadas las dos optimizaciones principales, se comparó el tiempo de búsqueda puramente semántica (excluyendo BM25) para las tres arquitecturas indexadas implementadas en el proyecto: FAISS exacto, FAISS HNSW y TurboVec cuantizado.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.85\textwidth]{scaling_techniques_plot.pdf}
-    \caption{Escalabilidad de latencia por arquitectura semántica (FAISS Exacto vs FAISS HNSW vs TurboVec Cuantizado).}
-\end{figure}
+Una vez explicadas las dos optimizaciones principales, se separan dos preguntas distintas. La primera es de \textbf{latencia}: FAISS Flat frente a FAISS HNSW en búsqueda semántica pura. La segunda es de \textbf{memoria}: FAISS \textit{float32} frente a TurboVec cuantizado. Mezclar ambas en una única gráfica puede llevar a conclusiones confusas, porque TurboVec se evalúa principalmente por compresión y HNSW por tiempo de búsqueda.
 
 La comparativa muestra dos estrategias complementarias:
 \begin{itemize}
-    \item \textbf{FAISS HNSW:} reduce de forma extrema la latencia de búsqueda al sustituir el escaneo exhaustivo por navegación aproximada en un grafo. Es la opción más adecuada cuando la prioridad es responder rápido.
-    \item \textbf{TurboVec Cuantizado (4 bits):} reduce de forma drástica la memoria persistida de los vectores y mantiene una calidad semántica muy parecida a FAISS exacto. Es la opción más adecuada cuando la limitación principal es almacenamiento o RAM.
+    \item \textbf{FAISS HNSW:} reduce de forma extrema la latencia de búsqueda al sustituir el escaneo exhaustivo por navegación aproximada en un grafo. En el benchmark corregido pasa de 59,579 ms a 0,434 ms por consulta sobre 1,14M vectores.
+    \item \textbf{TurboVec Cuantizado (4 bits):} reduce de forma drástica la memoria persistida de los vectores y mantiene una calidad semántica muy parecida a FAISS exacto. Es la opción más adecuada cuando la limitación principal es almacenamiento o RAM, no necesariamente latencia.
 \end{itemize}
 
 FAISS exacto queda como referencia de calidad y reproducibilidad, HNSW como alternativa de baja latencia y TurboVec como alternativa de baja memoria. Según el escenario de despliegue, estas técnicas pueden elegirse de forma independiente o combinarse con la recuperación léxica BM25 y la fusión RRF del sistema híbrido.

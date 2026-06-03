@@ -6,7 +6,6 @@ import numpy as np
 
 from wikirag_es.data.models import RetrievalResult
 from wikirag_es.indexing.embeddings import EmbeddingModel
-from wikirag_es.indexing.vector_store import HybridIndex
 from wikirag_es.utils.text import strip_prompt_injection
 
 if TYPE_CHECKING:
@@ -22,7 +21,7 @@ def reciprocal_rank_fusion(
         for result in results:
             by_chunk[result.chunk.chunk_id] = result
             scores[result.chunk.chunk_id] = scores.get(result.chunk.chunk_id, 0.0) + 1.0 / (k + result.rank)
-    ranked_ids = sorted(scores, key=scores.get, reverse=True)[:top_k]
+    ranked_ids = sorted(scores, key=lambda chunk_id: (-scores[chunk_id], chunk_id))[:top_k]
     fused: list[RetrievalResult] = []
     for rank, chunk_id in enumerate(ranked_ids, start=1):
         base = by_chunk[chunk_id]

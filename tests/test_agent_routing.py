@@ -1,4 +1,4 @@
-from wikirag_es.agents.router import AssistantAgent
+from wikirag_es.agents.router import AssistantAgent, deterministic_route
 from wikirag_es.agents.web_search import WebSearchTool
 
 
@@ -35,8 +35,17 @@ def _agent(llm, web_tool=None, use_llm_router=True) -> AssistantAgent:
 def test_regex_route_detects_summary_and_date() -> None:
     agent = _agent(FakeLLM())
     assert agent._route("Resume este documento") == "summary"
+    assert deterministic_route("Resúmeme las ideas principales") == "summary"
     assert agent._route("¿Qué día es hoy?") == "date"
     assert agent._route("¿Qué tópicos hay en el corpus?") == "rag_topics"
+    assert agent._route("Dame la lista de clusters detectados") == "rag_topics"
+
+
+def test_topic_route_does_not_capture_generic_theme_questions() -> None:
+    agent = _agent(FakeLLM('{"tool": "rag"}'))
+
+    assert agent._route("¿Cuál es el tema principal de Don Quijote?") == "rag"
+    assert agent._route("¿Qué es un cluster en Wikipedia?") == "rag"
 
 
 def test_llm_route_picks_web_when_tool_available() -> None:
@@ -66,6 +75,18 @@ def test_date_action_uses_date_tool_without_llm() -> None:
     assert response.action == "date"
     assert "Hoy es" in response.answer
     assert llm.prompts == []  # ruta determinista, sin coste LLM
+
+
+def test_explicit_summary_survives_history_rewrite() -> None:
+    llm = FakeLLM("consulta reescrita sin palabra resumen")
+    agent = _agent(llm)
+    agent.history.append(("¿Qué sabes de la mitología griega?", "Respuesta previa."))
+
+    response = agent.answer("Resume lo anterior")
+
+    assert response.action == "summary"
+    assert response.answer == "resumen:contexto de consulta reescrita sin palabra resumen"
+    assert len(llm.prompts) == 1
 
 
 def test_conversational_memory_rewrites_followup() -> None:
