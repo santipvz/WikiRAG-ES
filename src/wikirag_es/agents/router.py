@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -32,6 +33,16 @@ def deterministic_route(query: str) -> str | None:
         lowered,
     ):
         return "date"
+    if re.search(
+        r"\b(busca\w*|consulta\w*|mira|investiga\w*|encuentra\w*|googlea\w*)\b"
+        r".*\b(internet|web|online|en linea|en línea)\b",
+        lowered,
+    ) or re.search(
+        r"\b(en internet|en la web|online|en linea|en línea|noticias|actualidad|"
+        r"[uú]ltima hora|reciente|actualizad[oa]s?|precio actual|cotizaci[oó]n)\b",
+        lowered,
+    ):
+        return "web"
     topic_term = re.search(r"\b(t[oó]picos?|temas|clusters?)\b", lowered)
     topic_scope = re.search(
         r"\b(corpus|offline|detectad[oa]s?|modelado|lista|listado|"
@@ -74,15 +85,28 @@ class AssistantAgent:
         """Limpia la memoria conversacional."""
         self.history = []
 
-    def answer(self, query: str) -> AgentResponse:
+    def answer(
+        self,
+        query: str,
+        on_token: Callable[[str], None] | None = None,
+        on_action: Callable[[str], None] | None = None,
+    ) -> AgentResponse:
         # Los disparadores explicitos del usuario mandan sobre la reescritura
         # y el router LLM.
         deterministic = deterministic_route(query)
         # Memoria conversacional: reescribe seguimientos como pregunta autonoma.
-        needs_rewrite = self.history and deterministic in {None, "summary"}
+        needs_rewrite = self.history and (
+            deterministic is None or (deterministic == "web" and self._references_history(query))
+        )
         search_query = self._rewrite_with_history(query) if needs_rewrite else query
         action = deterministic or self._route(search_query)
-        response = self._dispatch(action, query, search_query)
+        if action == "web" and self.web_tool is None:
+            action = "rag"
+        if action == "summary":
+            search_query = self._summary_search_query(search_query)
+        if on_action is not None:
+            on_action(action)
+        response = self._dispatch(action, query, search_query, on_token=on_token)
         self.history.append((query, response.answer))
         self.history = self.history[-HISTORY_TURNS:]
         return response
@@ -94,17 +118,34 @@ class AssistantAgent:
     # ------------------------------------------------------------------
     # Despacho de herramientas
     # ------------------------------------------------------------------
-    def _dispatch(self, action: str, query: str, search_query: str) -> AgentResponse:
+    def _dispatch(
+        self,
+        action: str,
+        query: str,
+        search_query: str,
+        on_token: Callable[[str], None] | None = None,
+    ) -> AgentResponse:
         if action == "date":
-            return AgentResponse(self.date_tool.run(), action, [])
+            answer = self.date_tool.run()
+            if on_token is not None:
+                on_token(answer)
+            return AgentResponse(answer, action, [])
 
         if action == "summary":
+            if self.history and self._references_history(query):
+                history_text = "\n".join(answer for _, answer in self.history)
+                summary = self.summary_tool.run_text(history_text, sentences=5, query=query)
+                if on_token is not None:
+                    self._stream_text(summary, on_token)
+                return AgentResponse(summary, action, [])
             context, sources = self.rag_tool.run(search_query)
             summary = (
                 self.summary_tool.run_text(context, sentences=5, query=search_query)
                 if context
                 else "No hay contexto suficiente."
             )
+            if on_token is not None:
+                self._stream_text(summary, on_token)
             return AgentResponse(summary, action, sources)
 
         if action == "web" and self.web_tool is not None:
@@ -117,8 +158,12 @@ class AssistantAgent:
                 context=context or "Sin resultados relevantes.",
                 web_context=web_context,
             )
-            answer = self.llm.generate(prompt=prompt, system=SYSTEM_PROMPT)
-            return AgentResponse(answer=answer, action="web", sources=sources + web_sources)
+            answer = self._generate_answer(prompt, SYSTEM_PROMPT, on_token=on_token)
+            return AgentResponse(
+                answer=answer,
+                action="web",
+                sources=self._filter_sources_by_citations(answer, sources + web_sources),
+            )
 
         context, sources = self.rag_tool.run(search_query)
         if action == "rag_topics" and self.topic_tool is not None:
@@ -127,8 +172,29 @@ class AssistantAgent:
         prompt = RAG_PROMPT_TEMPLATE.format(
             query=query, context=context or "Sin resultados relevantes."
         )
-        answer = self.llm.generate(prompt=prompt, system=SYSTEM_PROMPT)
-        return AgentResponse(answer=answer, action=action, sources=sources)
+        answer = self._generate_answer(prompt, SYSTEM_PROMPT, on_token=on_token)
+        return AgentResponse(
+            answer=answer,
+            action=action,
+            sources=self._filter_sources_by_citations(answer, sources),
+        )
+
+    def _generate_answer(
+        self,
+        prompt: str,
+        system: str | None,
+        on_token: Callable[[str], None] | None = None,
+    ) -> str:
+        if on_token is None:
+            return self.llm.generate(prompt=prompt, system=system)
+
+        chunks: list[str] = []
+        for chunk in self.llm.stream_generate(prompt=prompt, system=system):
+            if not chunk:
+                continue
+            on_token(chunk)
+            chunks.append(chunk)
+        return "".join(chunks).strip()
 
     # ------------------------------------------------------------------
     # Enrutado
@@ -186,3 +252,72 @@ class AssistantAgent:
             return query
         rewritten = rewritten.strip().splitlines()[0].strip() if rewritten.strip() else ""
         return rewritten or query
+
+    @staticmethod
+    def _summary_search_query(query: str) -> str:
+        cleaned = re.sub(
+            r"\b(hazme|haznos|haz|dame|realiza|genera|escribe|prepara)\b",
+            " ",
+            query,
+            flags=re.IGNORECASE,
+        )
+        cleaned = re.sub(
+            r"\b(un|una)?\s*(res[uú]m\w*|sintetiza\w*|s[ií]ntesis|sumario)\b",
+            " ",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+        cleaned = re.sub(
+            r"\b(de|del|sobre|acerca de|acerca del|acerca de la)\b",
+            " ",
+            cleaned,
+            count=1,
+            flags=re.IGNORECASE,
+        )
+        cleaned = re.sub(r"\s+", " ", cleaned).strip(" .,:;¿?¡!")
+        return cleaned or query
+
+    @staticmethod
+    def _references_history(query: str) -> bool:
+        lowered = query.lower()
+        if re.search(
+            r"\b(eso|esto|anterior|previo|previa|[uú]ltim[oa]|mencionad[oa]|dicho)\b",
+            lowered,
+        ):
+            return True
+        return bool(
+            re.search(
+                r"\b(?:busca|consulta|mira|investiga|encuentra|resume|res[uú]me|haz|"
+                r"dime|explica|ampl[ií]a)\w*(?:lo|la|los|las)\b",
+                lowered,
+            )
+        )
+
+    @staticmethod
+    def _filter_sources_by_citations(answer: str, sources: list[str]) -> list[str]:
+        citations = {
+            (label.lower(), number)
+            for label, number in re.findall(
+                r"\[(Fuente|Web)\s+(\d+)\]", answer, flags=re.IGNORECASE
+            )
+        }
+        if not citations:
+            return []
+        filtered = []
+        for source in sources:
+            match = re.match(r"\[(Fuente|Web)\s+(\d+)\]", source)
+            if match and (match.group(1).lower(), match.group(2)) in citations:
+                filtered.append(source)
+        return filtered
+
+    @staticmethod
+    def _stream_text(text: str, on_token: Callable[[str], None]) -> None:
+        chunks = re.findall(r".*?(?:[.!?](?:\s+|$)|\n+|$)", text, flags=re.DOTALL)
+        emitted = False
+        for chunk in chunks:
+            if not chunk:
+                continue
+            on_token(chunk)
+            emitted = True
+        if not emitted and text:
+            on_token(text)

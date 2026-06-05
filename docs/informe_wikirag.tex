@@ -16,6 +16,7 @@
 \usepackage{placeins}
 \usepackage{tabularx}
 \usepackage{parskip}
+\usepackage{longtable}
 \usetikzlibrary{arrows.meta,babel,positioning,shapes.geometric,calc,patterns,shadows,fit}
 
 \geometry{margin=2.2cm}
@@ -124,7 +125,8 @@ El proyecto se acompaña de los siguientes archivos:
 \rowcolor{tabheader} \textbf{Ruta del archivo o directorio} & \textbf{Contenido y función} \\
 \midrule
 \code{src/wikirag\_es/} & Código fuente completo de la librería Python del paquete \code{wikirag-es}. \\
-\code{data/processed/miracl\_es\_corpus\_1M.jsonl} & Corpus local de 1\,000\,000 documentos con 200 consultas \textit{qrels}. \\
+\code{data/processed/miracl\_es\_corpus\_1M.jsonl} & Corpus local de 1\,000\,000 documentos MIRACL-es. \\
+\code{data/reports/miracl\_es\_eval.jsonl} & 200 consultas de evaluación con sus documentos relevantes disponibles dentro del subconjunto local. \\
 \code{data/indexes/default/} & Índices FAISS (Flat) y BM25 generados sobre 1\,140\,063 fragmentos. \\
 \code{data/reports/doc\_eval\_*.json} & Reportes de evaluación IR reproducidos para 50 consultas etiquetadas. \\
 \code{data/reports/*bench*.json} & Resultados y métricas de los benchmarks empíricos de escalabilidad, latencia y compresión de memoria (HNSW, TurboVec). \\
@@ -150,9 +152,9 @@ El proyecto se acompaña de los siguientes archivos:
 \toprule
 \rowcolor{tabheader} \textbf{Capa de software} & \textbf{Tecnología} \\
 \midrule
-Entorno y CLI & Python 3.12.13, Click 8.4.1 \\
-Modelado Vectorial & Sentence Transformers 5.5.1, modelo \code{paraphrase-multilingual-MiniLM-L12-v2} y PyTorch 2.5.1+cu121 \\
-Bases de Datos Vectoriales & FAISS CPU 1.14.2 (IndexFlatIP / IndexHNSWFlat), TurboVec (cuantización a 4 bits) \\
+Entorno y CLI & Python 3.12, Click; el entorno de auditoría actual tiene Click 8.3.0. \\
+Modelado Vectorial & Sentence Transformers, modelo \code{paraphrase-multilingual-MiniLM-L12-v2}; el entorno de auditoría actual tiene Sentence Transformers 5.4.1 y PyTorch 2.11.0+cu128. \\
+Bases de Datos Vectoriales & FAISS CPU (IndexFlatIP / IndexHNSWFlat) en el entorno de benchmark original; TurboVec como dependencia opcional para cuantización a 4 bits. \\
 Recuperación Léxica y \textit{Reranking} & BM25Okapi (\code{rank-bm25}) y cross-encoder \code{mmarco-mMiniLMv2-L12} \\
 Motor de Inferencia & Ollama (servidor local), modelo \code{gemma4:e4b} \\
 Procesamiento Analítico & BERTopic (UMAP+HDBSCAN), NetworkX (PageRank/TextRank) \\
@@ -173,7 +175,7 @@ Para acelerar la generación de \textit{embeddings} de más de un millón de fra
 \rowcolor{tabheader} \textbf{Componente} & \textbf{Especificación} \\
 \midrule
 Acelerador Gráfico (GPU) & NVIDIA GeForce RTX 5060 Ti (8\,GB VRAM) \\
-Motor Vectorial & PyTorch 2.12.0 con backend CUDA 13.0 habilitado y controlador NVIDIA 595.71.05 (CUDA 13.2) \\
+Motor Vectorial & PyTorch con backend CUDA en la corrida de indexación; en la auditoría actual se detectó PyTorch 2.11.0+cu128, mientras que \code{faiss-cpu}, \code{bertopic} y \code{turbovec} no estaban instalados en el intérprete activo. \\
 \bottomrule
 \end{tabularx}
 \caption{Especificaciones del servidor local utilizado en la corrida documentada.}
@@ -244,7 +246,7 @@ El flujo de trabajo se divide conceptualmente en dos grandes bloques: el procesa
 
 \subsection{Diseño Agencial del Router}
 
-En lugar de construir un RAG tradicional donde toda pregunta activa incondicionalmente la base vectorial, se ha implementado un \textbf{Agente Router} de dos niveles. La clase \code{AssistantAgent} aplica primero atajos deterministas por expresiones regulares para disparadores explícitos (resumen, fecha, tópicos) y, ante consultas ambiguas, delega la decisión en el \textbf{LLM}, que selecciona la herramienta devolviendo un objeto JSON (\code{function-calling} ligero). Si el LLM no está disponible o su salida es inválida, el sistema recae con seguridad en la herramienta RAG. Esto ahorra tokens, reduce alucinaciones y mantiene un comportamiento robusto y trazable. El agente conserva además \textbf{memoria conversacional}: reescribe las preguntas de seguimiento como consultas autónomas antes de recuperar.
+En lugar de construir un RAG tradicional donde toda pregunta activa incondicionalmente la base vectorial, se ha implementado un \textbf{Agente Router} de dos niveles. La clase \code{AssistantAgent} aplica primero atajos deterministas por expresiones regulares para disparadores explícitos (resumen, fecha, tópicos, peticiones web y consultas de actualidad) y, ante consultas ambiguas, delega la decisión en el \textbf{LLM}, que selecciona la herramienta devolviendo un objeto JSON (\code{function-calling} ligero). Si el LLM no está disponible o su salida es inválida, el sistema recae con seguridad en la herramienta RAG. Esto ahorra tokens, reduce la latencia previa a mostrar la herramienta activa y mantiene un comportamiento robusto. El agente conserva además \textbf{memoria conversacional}: solo reescribe las preguntas de seguimiento cuando hay referencias anafóricas reales al historial.
 
 \begin{table}[htbp]
 \centering
@@ -258,11 +260,13 @@ En lugar de construir un RAG tradicional donde toda pregunta activa incondiciona
 \code{SummaryTool} & \textit{resume, ideas principales...} & Calcula TextRank extractivo sobre el contexto recuperado y devuelve frases existentes. \\
 \code{TopicTool} & \textit{tópicos/clusters del corpus...} & Extrae información del archivo JSON de clústeres de BERTopic. \\
 \code{DateTool} & \textit{qué día es hoy...} & Devuelve la fecha actual formateada en español (día de la semana incluido). \\
-\code{WebSearchTool} & (Decisión del LLM) & Busca en la web (DuckDuckGo) información complementaria y la fusiona con el contexto local. \\
+\code{WebSearchTool} & \textit{internet, web, noticias, actualidad...} & Busca en DuckDuckGo información complementaria, la combina con contexto local y responde citando \code{[Web N]} cuando usa resultados externos. \\
 \bottomrule
 \end{tabularx}
 \caption{Inventario de herramientas del Agente Router.}
 \end{table}
+
+Las respuestas generativas se emiten en \textit{streaming} mediante Ollama cuando pasan por el LLM. Las rutas deterministas sin LLM, como fecha y resumen extractivo, emiten texto por bloques o frases para que el usuario no espere a que termine toda la operación. Además, las fuentes mostradas al final de una respuesta RAG o web se filtran por citas explícitas: solo se listan aquellas que aparezcan realmente como \code{[Fuente N]} o \code{[Web N]} en la respuesta. Esto evita presentar como evidencias documentos recuperados por vecindad cuando el modelo ha declarado que no hay contexto suficiente.
 
 \subsection{Resumen extractivo y determinismo}
 
@@ -274,9 +278,9 @@ El módulo de resumen no es un resumen abstractivo generado por el LLM. Es un \t
   \item Aplicación de TextRank/PageRank para centralidad y selección con MMR para penalizar redundancia.
 \end{enumerate}
 
-Cuando el usuario pregunta \textit{``Resume lo que tengas sobre X''}, el agente primero recupera contexto con RAG y después resume ese contexto. Por tanto, el resumen es tan estable como lo sean la consulta efectiva y el contexto recuperado. Con el mismo índice, mismo \code{top\_k}, mismo historial conversacional y mismo contexto de entrada, el algoritmo extractivo debe devolver el mismo resultado. Si cambia el historial, el router reescribe la consulta de seguimiento de otra forma, se activa un índice aproximado, cambia el reranker o se recuperan fragmentos distintos, el resumen también puede cambiar.
+Cuando el usuario pregunta \textit{``Resume lo que tengas sobre X''}, el agente limpia la consulta para recuperar por el tema principal, obtiene contexto con RAG y después resume ese contexto. Antes de aplicar TextRank se eliminan cabeceras de contexto como \code{[Fuente N]}, \code{Ruta:} y \code{Texto:}; el resumen se calcula sobre el contenido documental, no sobre metadatos. Por tanto, el resumen es tan estable como lo sean la consulta efectiva y el contexto recuperado. Con el mismo índice, mismo \code{top\_k}, mismo historial conversacional y mismo contexto de entrada, el algoritmo extractivo debe devolver el mismo resultado. Si cambia el historial, se activa un índice aproximado, cambia el reranker o se recuperan fragmentos distintos, el resumen también puede cambiar.
 
-La revisión del sistema detectó dos fuentes de variabilidad que debían controlarse: la intención explícita de resumen podía perderse si la reescritura conversacional eliminaba la palabra \textit{``resume''}, y la selección MMR podía desempatar frases equivalentes sin orden estable. La corrección aplicada hace que los disparadores explícitos del usuario tengan prioridad sobre la reescritura y que los empates del resumen se resuelvan por orden de frase. Esto no convierte el RAG completo en determinista bajo cualquier configuración, pero sí hace determinista el resumen cuando recibe el mismo texto de entrada.
+La revisión del sistema detectó tres fuentes de variabilidad que debían controlarse: la intención explícita de resumen podía perderse si la reescritura conversacional eliminaba la palabra \textit{``resume''}; la consulta de resumen podía incluir verbos de instrucción que deterioraban el recuperador; y la selección MMR podía desempatar frases equivalentes sin orden estable. La corrección aplicada hace que los disparadores explícitos del usuario tengan prioridad sobre la reescritura, que la búsqueda se haga por el tema limpio y que los empates del resumen se resuelvan por orden de frase. Esto no convierte el RAG completo en determinista bajo cualquier configuración, pero sí hace determinista el resumen cuando recibe el mismo texto de entrada.
 
 \FloatBarrier
 \newpage
@@ -331,28 +335,47 @@ Documentos outlier en \code{-1} & 34\,698 \\
 
 La confusión aparece cuando la herramienta de tópicos muestra solo los primeros resultados por brevedad: si se limita la salida a unas pocas filas y una de ellas es \code{-1}, puede parecer que el corpus tiene únicamente unos pocos tópicos útiles. La lectura correcta es que la lista presentada en chat es una \textbf{vista resumida} de los clusters mayores, no el número total de clusters generados.
 
-\begin{table}[htbp]
-\centering
+\begin{center}
 \small
 \rowcolors{2}{tabheader!40}{white}
-\begin{tabularx}{\textwidth}{r r X}
+\begin{longtable}{r r p{0.68\textwidth}}
+\caption{Veinticinco clusters reales más grandes del reporte BERTopic, excluyendo \code{-1}. El listado completo está en \code{data/reports/topics.json}.}\\
 \toprule
 \rowcolor{tabheader} \textbf{Cluster} & \textbf{Docs} & \textbf{Representación principal} \\
 \midrule
+\endfirsthead
+\toprule
+\rowcolor{tabheader} \textbf{Cluster} & \textbf{Docs} & \textbf{Representación principal} \\
+\midrule
+\endhead
 0 & 757 & poesía, modernismo, ramón, literatura, revista, poeta \\
-1 & 660 & educación, universidad, escuelas, universidades, secundaria \\
-2 & 559 & transporte, carreteras, autobuses, tren, estación \\
-3 & 499 & cocina, gastronomía, platos, arroz, carne \\
-4 & 498 & mesoamérica, tlaxcala, pueblos, mayas, teotihuacán \\
-5 & 453 & clima, temperaturas, precipitaciones, lluvias, invierno \\
-6 & 440 & canadá, ontario, brunswick, manitoba, alberta \\
-7 & 361 & televisión, alta definición, radio, canal, tv \\
-8 & 293 & mozart, bach, schubert, johann, wolfgang \\
-9 & 277 & unidades, kilogramo, litro, sistema internacional, metro \\
+1 & 660 & educación, universidad, escuelas, universidades, secundaria, alumnos \\
+2 & 559 & transporte, carreteras, autobuses, tren, líneas, estación \\
+3 & 499 & cocina, gastronomía, platos, arroz, carne, queso \\
+4 & 498 & mesoamérica, tlaxcala, pueblos, mayas, maya, teotihuacán \\
+5 & 453 & clima, temperaturas, precipitaciones, mm, lluvias, temperatura \\
+6 & 440 & canadá, ontario, brunswick, manitoba, nuevo brunswick, alberta \\
+7 & 361 & televisión, hd, alta definición, radio, televisión alta, canal \\
+8 & 293 & mozart, bach, schubert, johann, wolfgang, johann sebastian \\
+9 & 277 & unidades, kilogramo, unidad, litro, sistema internacional, metro \\
+10 & 262 & carter, bush, clinton, reagan, jimmy carter, jimmy \\
+11 & 236 & franco, francisco franco, azaña, francisco, batalla, civil española \\
+12 & 235 & cine, cine mexicano, mexicano, buñuel, película, películas \\
+13 & 231 & alfonso, aragón, castilla, fernando, sancho, alfonso vi \\
+14 & 230 & primer ministro, ministros, asamblea, ministro, parlamento, cámara \\
+15 & 226 & corán, islam, mahoma, musulmanes, profeta, árabe \\
+16 & 225 & religión, iglesia, católicos, católica, protestantes, religiones \\
+17 & 220 & río, ríos, cuenca, afluentes, aguas, lago \\
+18 & 213 & fármaco, medicamento, farmacia, farmacéutico, fármacos, medicamentos \\
+19 & 212 & bolívar, simón, simón bolívar, bolivia, caracas, sucre \\
+20 & 202 & cerebelo, nervioso, sistema nervioso, fibras, cerebro, encéfalo \\
+21 & 200 & vino, vinos, cerveza, uva, moscatel, uvas \\
+22 & 200 & presidente, presidente chile, nación argentina, presidente nación, chile, constitución \\
+23 & 199 & magnético, campo magnético, maxwell, campo, ecuaciones maxwell, ecuaciones \\
+24 & 199 & karate, taekwondo, ryu, marciales, marcial, artes marciales \\
 \bottomrule
-\end{tabularx}
-\caption{Diez clusters reales más grandes del reporte BERTopic, excluyendo \code{-1}.}
-\end{table}
+\end{longtable}
+\end{center}
 
 \FloatBarrier
 
@@ -361,6 +384,8 @@ La confusión aparece cuando la herramienta de tópicos muestra solo los primero
 %% =========================================================================
 
 El rendimiento de recuperación se evaluó sobre una muestra de \textbf{50 consultas} de MIRACL-es (\textit{dev}) con $k=10$, comparando tres configuraciones del motor frente al mismo \textit{ground-truth}.
+
+El conjunto de evaluación local no es el MIRACL completo: durante la adquisición se conservan las consultas cuyos documentos relevantes están disponibles dentro del subconjunto local de 1M documentos. Esto hace que las métricas sean válidas para comparar configuraciones internas del proyecto, pero no deben presentarse como el resultado oficial de MIRACL-es completo. Además, los reportes JSON guardan las listas recuperadas tal como salen del motor; pueden aparecer identificadores repetidos si dos estrategias recuperan el mismo documento. Las métricas se calculan sobre IDs únicos mediante \code{evaluate\_ids}, evitando contar dos veces el mismo documento relevante.
 
 \subsection{Métricas obtenidas}
 
@@ -413,7 +438,7 @@ La progresión por capas evidencia el aporte de cada componente sobre el \textit
   \item \textbf{Coste de escala:} BM25 sobre 1\,140\,063 fragmentos es el cuello de botella de la evaluación. Por ello se implementó carga parcial de índices: el modo léxico no carga FAISS ni el modelo de embeddings, y los benchmarks no cargan textos de fragmentos cuando solo necesitan \code{doc\_id}.
   \item \textbf{Lectura del MRR (0,542):} en la muestra documentada, el primer documento relevante aparece de media alrededor de la segunda posición. Es una métrica central para RAG porque el LLM atiende preferentemente a las primeras fuentes del \textit{prompt}.
   \item \textbf{Precisión y \textit{qrels}:} \textit{Precision@10} se mantiene moderada porque MIRACL-es marca pocos documentos relevantes por consulta. Recuperar 10 implica un techo de precisión bajo por construcción, de modo que \textit{Recall@10} y MRR son indicadores más informativos.
-  \item \textbf{Impacto del Reranking (Cross-Encoder):} Al evaluar el sistema sobre el conjunto completo de validación (200 consultas), la activación de la etapa de \textit{reranking} logra una mejora sustancial adicional. El MRR asciende de 0,481 a \textbf{0,636} y el \textit{Recall@10} pasa de 0,540 a \textbf{0,640}. Esto demuestra que el modelo \textit{cross-encoder} es altamente efectivo reordenando los candidatos de la fase híbrida para situar las fuentes correctas en las primerísimas posiciones.
+  \item \textbf{Impacto del Reranking (Cross-Encoder):} En una evaluación separada sobre 200 consultas y el índice HNSW, la activación de la etapa de \textit{reranking} logra una mejora sustancial adicional. El MRR asciende de 0,481 a \textbf{0,636} y el \textit{Recall@10} pasa de 0,540 a \textbf{0,640}. Esta comparación no debe mezclarse directamente con la tabla de 50 consultas, pero sí muestra que el \textit{cross-encoder} reordena eficazmente los candidatos de la fase híbrida.
 \end{itemize}
 
 \FloatBarrier
@@ -423,7 +448,7 @@ La progresión por capas evidencia el aporte de cada componente sobre el \textit
 \section{Escalabilidad RAG según el Tamaño del Corpus}
 %% =========================================================================
 
-Para justificar el uso de Big Data en arquitecturas RAG, se ha diseñado un benchmark de escalabilidad que evalúa cómo se comporta la calidad y el rendimiento del sistema híbrido al variar el volumen de documentos base. Se fragmentó el corpus local en colecciones de $100\,000$, $500\,000$ y la totalidad de $1\,140\,063$ fragmentos.
+Para justificar el uso de Big Data en arquitecturas RAG, se ha diseñado un benchmark de escalabilidad que evalúa cómo se comporta la calidad y el rendimiento del sistema híbrido al variar el volumen de fragmentos indexados. Se evaluaron colecciones de $100\,000$, $500\,000$ y la totalidad de $1\,140\,063$ \textit{chunks}.
 
 \begin{table}[htbp]
 \centering
@@ -449,7 +474,7 @@ Para justificar el uso de Big Data en arquitecturas RAG, se ha diseñado un benc
 \textbf{Análisis de los resultados:}
 \begin{enumerate}
     \item \textbf{Mejora de la calidad de recuperación:} Se observa empíricamente que, a medida que el modelo dispone de más texto fuente, la probabilidad de recuperar el fragmento correcto aumenta. Escalar de 100k a 1.1M \textit{chunks} eleva el MRR de 0,157 a 0,542 y mejora significativamente el \textit{Recall}.
-    \item \textbf{Impacto en el rendimiento:} Como era de esperar, la latencia total de la recuperación crece linealmente $O(N)$, alcanzando un promedio de más de 3.5 segundos por consulta al procesar el millón de documentos. Cabe destacar que el principal cuello de botella de esta métrica proviene del motor léxico BM25, ejecutado en Python puro, mientras que la parte semántica vectorial puede optimizarse fuertemente.
+    \item \textbf{Impacto en el rendimiento:} Como era de esperar, la latencia total de la recuperación crece de forma aproximadamente lineal con el número de \textit{chunks}, alcanzando 3.520 ms por consulta al procesar 1\,140\,063 fragmentos. Cabe destacar que el principal cuello de botella de esta métrica proviene del motor léxico BM25, ejecutado en Python puro, mientras que la parte semántica vectorial puede optimizarse fuertemente.
     \item \textbf{Justificación arquitectónica:} Este aumento en la latencia y en el consumo de memoria al evaluar grandes volúmenes de documentos justifica la integración de las optimizaciones descritas en las siguientes secciones: la \textbf{Indexación HNSW} (para reducir el tiempo de búsqueda semántica en FAISS) y la cuantización \textbf{TurboVec} (para optimizar el uso de memoria RAM).
 \end{enumerate}
 
@@ -577,7 +602,7 @@ Las siguientes interacciones fueron generadas desde la interfaz CLI interactiva 
 Tras la muerte de Mahoma en el año 632 comenzó la expansión musulmana y, en un lapso de cien años, los árabes ocuparon Egipto [Fuente 5]. Durante los primeros 300 años el islam fue ganando adeptos hasta convertirse en la religión predominante de la sociedad egipcia [Fuente 1]\ldots
 \end{quote}
 
-\textit{La respuesta es trazable y recupera fragmentos del artículo \code{es/33218}, marcado como relevante por los qrels expertos para esta consulta, confirmando la coherencia entre recuperación y ground-truth.}
+\textit{La respuesta es trazable y recupera fragmentos relacionados con el artículo \code{es/33218}. En los reportes IR, sin embargo, los qrels exactos para esta consulta son \code{1452\#22} y \code{33218\#10}; por tanto, este ejemplo ilustra una respuesta cualitativamente coherente, pero no debe presentarse como acierto exacto del ground-truth en la evaluación automática.}
 \vspace{0.3cm}
 \textbf{Usuario:} \textit{¿Qué país formó la primera Infantería de Marina?}
 
@@ -585,7 +610,7 @@ Tras la muerte de Mahoma en el año 632 comenzó la expansión musulmana y, en u
 La primera Infantería de Marina fue creada por Carlos I el 27 de febrero de 1537 al asignar de forma permanente a las escuadras de galeras del Mediterráneo las ``compañías viejas del mar de Nápoles'' [Fuente 1].
 \end{quote}
 
-\textit{El modelo responde con precisión histórica basándose en \code{es/63108\#3}. La evaluación completa queda en \code{data/reports/miracl\_es\_eval.jsonl}, con 200 preguntas validadas.}
+\textit{El modelo responde con precisión histórica basándose en \code{es/63108\#3}. El conjunto de consultas y qrels queda en \code{data/reports/miracl\_es\_eval.jsonl}; los resultados agregados de evaluación se almacenan en \code{data/reports/doc\_eval\_*.json} y \code{eval\_hnsw\_hybrid*.json}.}
 
 \newpage
 
@@ -598,16 +623,16 @@ La primera Infantería de Marina fue creada por Carlos I el 27 de febrero de 153
 No se puede determinar el horario de apertura del Museo del Prado a partir del contexto proporcionado. Las fuentes ofrecen información sobre la ubicación, historia y obras del museo, pero no incluyen datos sobre sus horarios [Fuente 1, 3, 7].
 \end{quote}
 
-\textit{Se demuestra cómo el prompt agresivo (\textit{"No inventes datos"}) prohíbe exitosamente al LLM alucinar respuestas si los documentos recuperados de la Wikipedia no contienen horarios.}
+\textit{Se demuestra cómo el prompt conservador (\textit{"No inventes datos"}) reduce el riesgo de alucinación si los documentos recuperados de la Wikipedia no contienen horarios. Si la respuesta no contiene citas explícitas \code{[Fuente N]}, el sistema no muestra fuentes recuperadas solo por similitud.}
 
 \vspace{0.3cm}
 \textbf{Usuario:} \textit{¿Cuáles son los hiperparámetros de LangChain usados en el proyecto?}
 
 \begin{quote}
-El contexto proporcionado no contiene información sobre los hiperparámetros utilizados en el proyecto LangChain. Solo describe términos y conceptos relacionados con diversos campos como arquitectura, trazabilidad, tecnología y series de televisión [Fuente 1-8].
+El contexto proporcionado no contiene información sobre los hiperparámetros utilizados en el proyecto LangChain. Solo describe términos y conceptos relacionados con otros campos, por lo que no es posible responder con evidencia suficiente.
 \end{quote}
 
-\textit{El sistema rechaza responder con firmeza. Al buscar sobre LangChain en Wikipedia recupera conceptos técnicos aleatorios, pero al no encontrar la respuesta exacta, el LLM declara explícitamente su ignorancia. Este comportamiento de \textbf{cero-alucinación} es lo ideal en un RAG.}
+\textit{El sistema rechaza responder con firmeza. Al buscar sobre LangChain en Wikipedia recupera conceptos técnicos aleatorios, pero al no encontrar la respuesta exacta, el LLM declara explícitamente su ignorancia. Este comportamiento conservador es deseable en un RAG, aunque no constituye una garantía formal de cero alucinaciones.}
 
 % ------- Ejemplo 3 -------
 \subsection{Llamada Agencial (Tool Routing)}
@@ -615,7 +640,7 @@ El contexto proporcionado no contiene información sobre los hiperparámetros ut
 \textbf{Usuario:} \textit{¿Qué día es hoy?}
 
 \begin{quote}
-Hoy es sábado, 30 de mayo de 2026.
+Hoy es \textit{[fecha calculada en ejecución]}.
 \end{quote}
 
 \textit{El agente no invoca a FAISS ni BM25, ya que deduce que la Wikipedia no contiene la respuesta al día actual, ejecutando el módulo \code{DateTool} internamente.}
@@ -630,6 +655,66 @@ Revolución Industrial. La industria textil también fue la primera en utilizar 
 
 \textit{Al detectar el verbo de instrucción (``Resume''), el router desactiva la generación lenta del LLM y ejecuta la herramienta \code{SummaryTool}, que recupera el documento con FAISS y le aplica el algoritmo extractivo clásico \code{TextRank} basado en grafos.}
 
+\vspace{0.3cm}
+\textbf{Usuario:} \textit{Busca en internet el precio actual del oro}
+
+\begin{quote}
+El agente selecciona \code{web}, recupera contexto local si existe, consulta DuckDuckGo y responde usando los snippets externos disponibles. Las evidencias web se citan como \code{[Web N]} cuando han sido usadas explícitamente.
+\end{quote}
+
+\textit{La herramienta web permite responder sobre información reciente o externa al subconjunto local de Wikipedia, pero no descarga páginas completas: usa títulos, URLs y fragmentos devueltos por DuckDuckGo. Por ello su cobertura depende de la red y de la calidad del snippet.}
+
+\newpage
+
+%% =========================================================================
+\section{Auditoría Técnica del Código}
+%% =========================================================================
+
+Tras revisar los módulos principales del sistema (CLI, router agencial, herramientas, recuperación, evaluación, tópicos, LLM y utilidades), no se han detectado errores bloqueantes en las rutas cubiertas por tests unitarios. Sí existen limitaciones y riesgos técnicos que conviene documentar para interpretar correctamente el sistema.
+
+\subsection{Verificaciones ejecutadas}
+
+\begin{itemize}
+  \item \textbf{Tests unitarios sin FAISS:} se ejecutaron los tests de router, herramientas, utilidades de texto, \textit{chunking} y RRF: 31 tests superados. Cubre \textit{streaming}, filtrado de fuentes, resumen extractivo y fusión RRF.
+  \item \textbf{Lint:} \code{ruff check .}: sin errores.
+  \item \textbf{Suite completa:} \code{PYTHONPATH=src pytest}: no puede recogerse en el intérprete actual porque falta \code{faiss} al importar \code{wikirag\_es.indexing.vector\_store}.
+  \item \textbf{Reportes JSON:} las métricas de IR, HNSW, escalabilidad y TurboVec del informe se contrastaron contra \code{data/reports/*.json}.
+\end{itemize}
+
+No se regeneraron benchmarks pesados porque el entorno activo no contiene \code{faiss-cpu}, \code{bertopic} ni \code{turbovec}. En su lugar se verificaron los reportes persistidos ya generados. Esta decisión evita crear artefactos nuevos y respeta que la documentación final se concentre en este fichero.
+
+\subsection{Hallazgos y riesgos no bloqueantes}
+
+\begin{center}
+\small
+\rowcolors{2}{tabheader!40}{white}
+\begin{longtable}{p{0.18\textwidth} p{0.31\textwidth} p{0.42\textwidth}}
+\caption{Auditoría de bugs, conexiones y errores conceptuales.}\\
+\toprule
+\rowcolor{tabheader} \textbf{Severidad} & \textbf{Hallazgo} & \textbf{Impacto y estado} \\
+\midrule
+\endfirsthead
+\toprule
+\rowcolor{tabheader} \textbf{Severidad} & \textbf{Hallazgo} & \textbf{Impacto y estado} \\
+\midrule
+\endhead
+Alta & Dependencia de artefactos de índice confiables & \code{HybridIndex.load} usa \code{pickle.load} para BM25 y \code{faiss.read\_index} para FAISS. Es correcto para índices propios, pero no debe ejecutarse sobre índices no confiables. Riesgo documentado; no bloquea la entrega local. \\
+Alta & Evaluación local no equivale a MIRACL completo & \code{acquire\_miracl\_spanish} construye qrels locales solo para documentos relevantes incluidos en el subconjunto. Las métricas sirven para comparar variantes internas, no para declarar un resultado oficial en MIRACL-es completo. \\
+Media-Alta & \code{--turbovec} no es híbrido & \code{TurboVecIndex} implementa búsqueda semántica, pero no \code{lexical\_search}; por tanto, \code{HybridRetriever} omite BM25 y ejecuta solo semántica rápida/cuantizada. El README ya lo advierte y el informe lo deja explícito. \\
+Media & Trazabilidad dependiente de citas explícitas & Las fuentes se listan únicamente si la respuesta contiene \code{[Fuente N]} o \code{[Web N]}. Esto evita fuentes espurias en respuestas negativas, pero si el LLM omite una cita válida no se mostrará la fuente. \\
+Media & Web externa no reproducible al 100\,\% & \code{WebSearchTool} usa DuckDuckGo HTML sin API key. Depende de red, cambios de HTML, snippets y ranking externo. Es útil para actualidad, pero no sustituye un índice web controlado. \\
+Media & Defensa de prompt injection básica & Se filtran patrones evidentes en documentos y snippets, y el prompt del sistema ordena no obedecer instrucciones recuperadas. No es una defensa completa ante inyecciones reformuladas. \\
+Media & Errores finales de Ollama no encapsulados & El router cae a RAG si falla la decisión LLM, pero una caída de Ollama durante la generación final puede abortar \code{chat/ask}. Es un riesgo operativo, no conceptual. \\
+Baja-Media & Parser del router por fallback textual & Si el LLM no devuelve JSON, el parser busca nombres de herramienta en texto plano. Está mitigado por prompt JSON, rutas deterministas y fallback a RAG, pero puede elegir mal en salidas muy ruidosas. \\
+Baja-Media & Tópicos con fallback silencioso & En modo \code{auto}, si BERTopic falla se usa NMF. Es práctico, pero puede ocultar la causa real del fallo si se necesita trazabilidad estricta del modelado. \\
+\bottomrule
+\end{longtable}
+\end{center}
+
+\subsection{Estado final del pipeline conversacional}
+
+El pipeline actual queda conceptualmente consistente: las rutas deterministas evitan llamadas LLM innecesarias; el router LLM se reserva para consultas ambiguas; el resumen es extractivo real; las respuestas generativas usan \textit{streaming}; y las fuentes no citadas ya no se muestran. El mayor coste interactivo sigue estando en dos puntos: BM25 sobre 1,14M \textit{chunks} en Python puro y la inferencia local de \code{gemma4:e4b} cuando recibe contexto largo.
+
 \newpage
 
 %% =========================================================================
@@ -639,15 +724,17 @@ Revolución Industrial. La industria textil también fue la primera en utilizar 
 \begin{enumerate}
   \item \textbf{Cobertura parcial de Wikipedia:} El experimento documentado se ejecutó sobre 1\,000\,000 documentos MIRACL-es, un subconjunto amplio pero todavía inferior a los 10,4 millones disponibles en la colección completa. Si el usuario pregunta por un artículo que no está en el subconjunto, el motor recuperará el documento más similar posible y el LLM deberá declarar falta de información cuando el contexto no baste.
   \item \textbf{Límites de memoria del Motor Léxico (OOM):} \code{rank-bm25} instancia las frecuencias léxicas directamente en RAM, por lo que la búsqueda léxica no escala de forma indefinida. A escala de decenas de millones de documentos se requeriría un motor invertido en disco (p.\,ej. Elasticsearch/Lucene).
-  \item \textbf{Cuello de botella en la latencia Híbrida (BM25):} A pesar de utilizar índices ultrarrápidos como HNSW (FAISS) o TurboVec para la búsqueda semántica, la latencia total por consulta del agente en modo híbrido ronda los 4 segundos. Esto se debe a que siempre se debe esperar a los resultados de la búsqueda léxica (BM25), la cual tarda casi 4 segundos en iterar sobre 1.14 millones de documentos en Python puro. La lentitud general observada no es atribuible a los modelos vectoriales aproximados o cuantizados (que resuelven en $\sim$1\,ms), sino a la etapa léxica obligatoria para la fusión RRF.
-  \item \textbf{Latencia de Inferencia del LLM Local:} Independientemente de la velocidad de recuperación de documentos (que se resuelve en milisegundos usando FAISS o TurboVec), la interacción completa del chat añade una latencia significativa de entre 30 y 50 segundos. Este cuello de botella no radica en la recuperación de información, sino en el procesamiento del contexto inyectado (miles de tokens extraídos de los documentos de Wikipedia) y la subsiguiente generación de la respuesta elaborada palabra por palabra por parte del modelo \code{gemma4:e4b} ejecutado en un ordenador normal.
+  \item \textbf{Cuello de botella en la latencia híbrida (BM25):} A pesar de utilizar índices vectoriales rápidos como HNSW, la latencia total por consulta del recuperador híbrido alcanza 3.520 ms en el benchmark de 1\,140\,063 \textit{chunks}. Esto se debe a que la fusión RRF espera tanto la parte semántica como la búsqueda léxica BM25, ejecutada en Python puro. En cambio, la búsqueda semántica aislada con HNSW queda por debajo de 1 ms en el benchmark documentado; FAISS Flat y TurboVec se mueven en decenas de ms.
+  \item \textbf{Latencia de inferencia del LLM local:} La interacción completa del chat añade el coste de procesar el contexto inyectado y generar la respuesta con \code{gemma4:e4b}. El \textit{streaming} mejora la percepción de latencia porque muestra tokens conforme llegan, pero no elimina el coste total de inferencia.
+  \item \textbf{Agente web basado en snippets:} \code{WebSearchTool} permite responder sobre información reciente o fuera del corpus local, pero usa únicamente títulos, URLs y fragmentos de DuckDuckGo. No descarga ni verifica el contenido completo de las páginas, de modo que la respuesta depende de la calidad del snippet.
+  \item \textbf{Seguridad de índices locales:} Los índices entregados deben considerarse artefactos de confianza del proyecto. No se debe cargar un directorio de índice de origen desconocido porque BM25 se serializa con \code{pickle} y FAISS carga estructuras nativas desde disco.
 \end{enumerate}
 
 %% =========================================================================
 \section{Conclusiones}
 %% =========================================================================
 
-El sistema desarrollado en un asistente documental funcional que integra embeddings, tópicos, resumen extractivo, LLM, RAG y agentes. A través de pruebas, se comprobó que la Recuperación Aumentada (RAG) depende críticamente de la calidad del recuperador y de la trazabilidad de las fuentes. Gracias a la compresión vectorial (TurboVec), la carga parcial de índices y el enrutamiento agencial nos permiten tener un sistema más eficiente sin sacrificar demasiada precisión.
+El sistema desarrollado es un asistente documental funcional que integra embeddings, tópicos, resumen extractivo, LLM, RAG y agentes. A través de pruebas, se comprobó que la Recuperación Aumentada (RAG) depende críticamente de la calidad del recuperador y de la trazabilidad de las fuentes. Gracias a la compresión vectorial (TurboVec), la carga parcial de índices, el \textit{streaming} de respuestas y el enrutamiento agencial se obtiene un sistema más eficiente y usable sin sacrificar demasiada precisión. La auditoría final no detecta errores bloqueantes en las rutas cubiertas por tests, pero deja documentados los límites de reproducibilidad, seguridad de artefactos, web externa y evaluación local.
 
 \newpage
 \appendix

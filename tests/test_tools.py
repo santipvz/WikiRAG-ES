@@ -1,6 +1,6 @@
 import json
 
-from wikirag_es.agents.tools import DateTool, MONTHS_ES, TopicTool, WEEKDAYS_ES
+from wikirag_es.agents.tools import DateTool, MONTHS_ES, SummaryTool, TopicTool, WEEKDAYS_ES
 from wikirag_es.agents.web_search import WebSearchTool
 from wikirag_es.summarization.extractive import split_sentences, textrank_summary
 
@@ -91,3 +91,22 @@ def test_textrank_summary_breaks_ties_by_sentence_order() -> None:
         "Primera frase suficientemente larga para entrar en el resumen.",
         "Segunda frase suficientemente larga para entrar en el resumen.",
     ]
+
+
+def test_summary_tool_extracts_only_text_from_rag_context() -> None:
+    context = (
+        "[Fuente 1] Revolución Industrial\n"
+        "Ruta: hf://corpus/1\n"
+        "Texto: La Revolución Industrial transformó talleres en fábricas durante el siglo XVIII. "
+        "Introdujo maquinaria y nuevas formas de trabajo.\n\n"
+        "[Fuente 2] Segunda Revolución Industrial\n"
+        "Ruta: hf://corpus/2\n"
+        "Texto: También impulsó el crecimiento urbano y cambios sociales profundos."
+    )
+
+    summary = SummaryTool(FakeEmbeddingModel()).run_text(context, sentences=3)
+
+    assert "[Fuente" not in summary
+    assert "Ruta:" not in summary
+    assert "Texto:" not in summary
+    assert "La Revolución Industrial transformó talleres" in summary

@@ -185,12 +185,9 @@ def ask_cmd(index_dir: Path, topics_report: Path | None, turbovec: bool, query: 
         click.echo(DateTool().run())
         return
     agent = _build_agent(index_dir, topics_report=topics_report, is_turbovec=turbovec)
-    response = agent.answer(query)
-    click.echo(response.answer)
-    if response.sources:
-        click.echo("\nFuentes:")
-        for source in response.sources:
-            click.echo(f"- {source}")
+    response = agent.answer(query, on_token=_echo_stream_chunk)
+    click.echo()
+    _echo_sources(response.sources)
 
 
 @main.command("chat")
@@ -214,8 +211,14 @@ def chat_cmd(index_dir: Path, topics_report: Path | None, turbovec: bool) -> Non
             agent.reset()
             click.echo("\n[Memoria conversacional reiniciada]\n")
             continue
-        response = agent.answer(query)
-        click.echo(f"\nAsistente ({response.action}):\n{response.answer}\n")
+
+        def echo_action(action: str) -> None:
+            click.echo(f"\nAsistente ({action}):\n", nl=False)
+
+        response = agent.answer(query, on_token=_echo_stream_chunk, on_action=echo_action)
+        click.echo()
+        _echo_sources(response.sources)
+        click.echo()
 
 
 @main.command("eval-ir")
@@ -377,6 +380,19 @@ def _build_agent(index_dir: Path, topics_report: Path | None = None, is_turbovec
         web_tool=WebSearchTool(settings.web_search_results, settings.web_search_timeout),
         use_llm_router=settings.use_llm_router,
     )
+
+
+def _echo_stream_chunk(chunk: str) -> None:
+    click.echo(chunk, nl=False)
+    click.get_text_stream("stdout").flush()
+
+
+def _echo_sources(sources: list[str]) -> None:
+    if not sources:
+        return
+    click.echo("\nFuentes:")
+    for source in sources:
+        click.echo(f"- {source}")
 
 
 def _count_jsonl_rows(path: Path) -> int:

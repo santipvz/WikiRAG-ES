@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import date
 from pathlib import Path
 
@@ -37,6 +38,7 @@ class SummaryTool:
         self.embedding_model = embedding_model
 
     def run_text(self, text: str, sentences: int = 4, query: str | None = None) -> str:
+        text = _extract_plain_context_text(text)
         return " ".join(
             textrank_summary(text, self.embedding_model, sentences=sentences, query=query)
         )
@@ -90,6 +92,28 @@ def _topic_count(topic: dict) -> int:
         return int(topic.get("Count", topic.get("count", 0)))
     except (TypeError, ValueError):
         return 0
+
+
+_CONTEXT_TEXT_RE = re.compile(
+    r"(?:^|\n)Texto:\s*(.*?)(?=\n\n\[Fuente \d+\]|\Z)", re.DOTALL
+)
+
+
+def _extract_plain_context_text(text: str) -> str:
+    """Extrae solo el contenido textual de bloques RAG con metadatos."""
+    matches = [match.strip() for match in _CONTEXT_TEXT_RE.findall(text) if match.strip()]
+    if matches:
+        return "\n".join(matches)
+    lines = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("[Fuente ") or stripped.startswith("Ruta:"):
+            continue
+        if stripped.startswith("Texto:"):
+            stripped = stripped.removeprefix("Texto:").strip()
+        if stripped:
+            lines.append(stripped)
+    return "\n".join(lines)
 
 
 class DateTool:
