@@ -182,7 +182,9 @@ def ask_cmd(index_dir: Path, topics_report: Path | None, turbovec: bool, query: 
     from wikirag_es.agents.tools import DateTool
 
     if deterministic_route(query) == "date":
-        click.echo(DateTool().run())
+        from wikirag_es.agents.router import AssistantAgent
+        AssistantAgent._stream_text(DateTool().run(), on_token=_echo_stream_chunk)
+        click.echo()
         return
     agent = _build_agent(index_dir, topics_report=topics_report, is_turbovec=turbovec)
     response = agent.answer(query, on_token=_echo_stream_chunk)
@@ -392,7 +394,25 @@ def _echo_sources(sources: list[str]) -> None:
         return
     click.echo("\nFuentes:")
     for source in sources:
-        click.echo(f"- {source}")
+        parts = source.split(" ", 2)
+        if len(parts) >= 3 and (parts[2].startswith("hf://") or parts[2].startswith("http")):
+            prefix = f"{parts[0]} {parts[1]}"
+            url = parts[2].strip()
+            
+            clickable_url = url
+            if url.startswith("hf://"):
+                try:
+                    # Parse the doc_id, e.g. from hf://miracl/miracl-corpus/es/194923#18
+                    # The actual file is data/processed/miracl_es_corpus.jsonl
+                    import os
+                    local_path = os.path.abspath("data/processed/miracl_es_corpus.jsonl")
+                    clickable_url = f"file://{local_path}"
+                except Exception:
+                    pass
+                    
+            click.echo(f"- {prefix} \033]8;;{clickable_url}\033\\{url}\033]8;;\033\\")
+        else:
+            click.echo(f"- {source}")
 
 
 def _count_jsonl_rows(path: Path) -> int:

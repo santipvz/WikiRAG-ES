@@ -128,7 +128,7 @@ class AssistantAgent:
         if action == "date":
             answer = self.date_tool.run()
             if on_token is not None:
-                on_token(answer)
+                self._stream_text(answer, on_token)
             return AgentResponse(answer, action, [])
 
         if action == "summary":
@@ -312,12 +312,9 @@ class AssistantAgent:
 
     @staticmethod
     def _stream_text(text: str, on_token: Callable[[str], None]) -> None:
-        chunks = re.findall(r".*?(?:[.!?](?:\s+|$)|\n+|$)", text, flags=re.DOTALL)
-        emitted = False
+        import time
+        chunks = re.findall(r"\S+\s*|\s+", text)
         for chunk in chunks:
-            if not chunk:
-                continue
-            on_token(chunk)
-            emitted = True
-        if not emitted and text:
-            on_token(text)
+            if chunk:
+                on_token(chunk)
+                time.sleep(0.025)

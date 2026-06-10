@@ -1,4 +1,7 @@
 \documentclass[11pt,a4paper]{article}
+%DIF LATEXDIFF DIFFERENCE FILE
+%DIF DEL docs/informe_wikirag_old_ver.tex   Wed Jun 10 23:29:04 2026
+%DIF ADD docs/informe_wikirag.tex           Wed Jun 10 23:28:49 2026
 
 \usepackage[spanish]{babel}
 \usepackage[utf8]{inputenc}
@@ -15,8 +18,11 @@
 \usepackage{colortbl}
 \usepackage{placeins}
 \usepackage{tabularx}
+\renewcommand{\tabularxcolumn}[1]{m{#1}}
 \usepackage{parskip}
-\usepackage{longtable}
+%DIF 19a19
+\usepackage{longtable} %DIF >
+%DIF -------
 \usetikzlibrary{arrows.meta,babel,positioning,shapes.geometric,calc,patterns,shadows,fit}
 
 \geometry{margin=2.2cm}
@@ -37,6 +43,81 @@
 \definecolor{barred}{HTML}{D32F2F}
 \definecolor{barteal}{HTML}{00897B}
 \definecolor{tabheader}{HTML}{E3F2FD}
+%DIF PREAMBLE EXTENSION ADDED BY LATEXDIFF
+\RequirePackage{color} %DIF PREAMBLE
+\providecommand{\DIFaddtex}[1]{\leavevmode{\color{blue}#1}} %DIF PREAMBLE
+\providecommand{\DIFdeltex}[1]{} %DIF PREAMBLE
+\providecommand{\DIFaddbegin}{} %DIF PREAMBLE
+\providecommand{\DIFaddend}{} %DIF PREAMBLE
+\providecommand{\DIFdelbegin}{} %DIF PREAMBLE
+\providecommand{\DIFdelend}{} %DIF PREAMBLE
+\providecommand{\DIFaddFL}[1]{\DIFadd{#1}} %DIF PREAMBLE
+\providecommand{\DIFdelFL}[1]{\DIFdel{#1}} %DIF PREAMBLE
+\providecommand{\DIFaddbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFaddendFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelendFL}{} %DIF PREAMBLE
+%DIF HYPERREF PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFadd}[1]{\texorpdfstring{\DIFaddtex{#1}}{#1}} %DIF PREAMBLE
+\providecommand{\DIFdel}[1]{\texorpdfstring{\DIFdeltex{#1}}{}} %DIF PREAMBLE
+\newcommand{\DIFscaledelfig}{0.5}
+%DIF HIGHLIGHTGRAPHICS PREAMBLE %DIF PREAMBLE
+\RequirePackage{settobox} %DIF PREAMBLE
+\RequirePackage{letltxmacro} %DIF PREAMBLE
+\newsavebox{\DIFdelgraphicsbox} %DIF PREAMBLE
+\newlength{\DIFdelgraphicswidth} %DIF PREAMBLE
+\newlength{\DIFdelgraphicsheight} %DIF PREAMBLE
+% store original definition of \includegraphics %DIF PREAMBLE
+\LetLtxMacro{\DIFOincludegraphics}{\includegraphics} %DIF PREAMBLE
+\newcommand{\DIFaddincludegraphics}[2][]{{\color{blue}\fbox{\DIFOincludegraphics[#1]{#2}}}} %DIF PREAMBLE
+\newcommand{\DIFdelincludegraphics}[2][]{% %DIF PREAMBLE
+\sbox{\DIFdelgraphicsbox}{\DIFOincludegraphics[#1]{#2}}% %DIF PREAMBLE
+\settoboxwidth{\DIFdelgraphicswidth}{\DIFdelgraphicsbox} %DIF PREAMBLE
+\settoboxtotalheight{\DIFdelgraphicsheight}{\DIFdelgraphicsbox} %DIF PREAMBLE
+\scalebox{\DIFscaledelfig}{% %DIF PREAMBLE
+\parbox[b]{\DIFdelgraphicswidth}{\usebox{\DIFdelgraphicsbox}\\[-\baselineskip] \rule{\DIFdelgraphicswidth}{0em}}\llap{\resizebox{\DIFdelgraphicswidth}{\DIFdelgraphicsheight}{% %DIF PREAMBLE
+\setlength{\unitlength}{\DIFdelgraphicswidth}% %DIF PREAMBLE
+\begin{picture}(1,1)% %DIF PREAMBLE
+\thicklines\linethickness{2pt} %DIF PREAMBLE
+{\color[rgb]{1,0,0}\put(0,0){\framebox(1,1){}}}% %DIF PREAMBLE
+{\color[rgb]{1,0,0}\put(0,0){\line( 1,1){1}}}% %DIF PREAMBLE
+{\color[rgb]{1,0,0}\put(0,1){\line(1,-1){1}}}% %DIF PREAMBLE
+\end{picture}% %DIF PREAMBLE
+}\hspace*{3pt}}} %DIF PREAMBLE
+} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddbegin}{\DIFaddbegin} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddend}{\DIFaddend} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelbegin}{\DIFdelbegin} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelend}{\DIFdelend} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddbegin}{\DIFOaddbegin \let\includegraphics\DIFaddincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddend}{\DIFOaddend \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelbegin}{\DIFOdelbegin \let\includegraphics\DIFdelincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelend}{\DIFOaddend \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddbeginFL}{\DIFaddbeginFL} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddendFL}{\DIFaddendFL} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelbeginFL}{\DIFdelbeginFL} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelendFL}{\DIFdelendFL} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddbeginFL}{\DIFOaddbeginFL \let\includegraphics\DIFaddincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddendFL}{\DIFOaddendFL \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelbeginFL}{\DIFOdelbeginFL \let\includegraphics\DIFdelincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelendFL}{\DIFOaddendFL \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+%DIF COLORLISTINGS PREAMBLE %DIF PREAMBLE
+\RequirePackage{listings} %DIF PREAMBLE
+\RequirePackage{color} %DIF PREAMBLE
+\lstdefinelanguage{DIFcode}{ %DIF PREAMBLE
+%DIF DIFCODE_CFONT %DIF PREAMBLE
+  moredelim=[il][\color{red}\scriptsize]{\%DIF\ <\ }, %DIF PREAMBLE
+  moredelim=[il][\color{blue}\sffamily]{\%DIF\ >\ } %DIF PREAMBLE
+} %DIF PREAMBLE
+\lstdefinestyle{DIFverbatimstyle}{ %DIF PREAMBLE
+	language=DIFcode, %DIF PREAMBLE
+	basicstyle=\ttfamily, %DIF PREAMBLE
+	columns=fullflexible, %DIF PREAMBLE
+	keepspaces=true %DIF PREAMBLE
+} %DIF PREAMBLE
+\lstnewenvironment{DIFverbatim}{\lstset{style=DIFverbatimstyle}}{} %DIF PREAMBLE
+\lstnewenvironment{DIFverbatim*}{\lstset{style=DIFverbatimstyle,showspaces=true}}{} %DIF PREAMBLE
+%DIF END PREAMBLE EXTENSION ADDED BY LATEXDIFF
 
 \begin{document}
 \hypersetup{pageanchor=false}
@@ -114,7 +195,7 @@ Router Agencial & \code{agents/router.py} & Enrutado híbrido: atajos determinis
 \newpage
 \subsection{Archivos entregados}
 
-El proyecto se acompaña de los siguientes archivos:
+El proyecto se acompaña de los siguientes archivos\DIFdelbegin \DIFdel{, listos para su ejecución y auditoría}\DIFdelend :
 
 \begin{table}[htbp]
 \centering
@@ -125,8 +206,8 @@ El proyecto se acompaña de los siguientes archivos:
 \rowcolor{tabheader} \textbf{Ruta del archivo o directorio} & \textbf{Contenido y función} \\
 \midrule
 \code{src/wikirag\_es/} & Código fuente completo de la librería Python del paquete \code{wikirag-es}. \\
-\code{data/processed/miracl\_es\_corpus\_1M.jsonl} & Corpus local de 1\,000\,000 documentos MIRACL-es. \\
-\code{data/reports/miracl\_es\_eval.jsonl} & 200 consultas de evaluación con sus documentos relevantes disponibles dentro del subconjunto local. \\
+\code{data/processed/miracl\_es\_corpus\_1M.jsonl} & Corpus local de 1\,000\,000 documentos \DIFdelbeginFL \DIFdelFL{con }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{MIRACL-es. }\\
+\DIFaddFL{\code{data/reports/miracl\_es\_eval.jsonl} }& \DIFaddendFL 200 consultas \DIFdelbeginFL \DIFdelFL{\textit{qrels}}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{de evaluación con sus documentos relevantes disponibles dentro del subconjunto local}\DIFaddendFL . \\
 \code{data/indexes/default/} & Índices FAISS (Flat) y BM25 generados sobre 1\,140\,063 fragmentos. \\
 \code{data/reports/doc\_eval\_*.json} & Reportes de evaluación IR reproducidos para 50 consultas etiquetadas. \\
 \code{data/reports/*bench*.json} & Resultados y métricas de los benchmarks empíricos de escalabilidad, latencia y compresión de memoria (HNSW, TurboVec). \\
@@ -152,9 +233,9 @@ El proyecto se acompaña de los siguientes archivos:
 \toprule
 \rowcolor{tabheader} \textbf{Capa de software} & \textbf{Tecnología} \\
 \midrule
-Entorno y CLI & Python 3.12, Click; el entorno de auditoría actual tiene Click 8.3.0. \\
-Modelado Vectorial & Sentence Transformers, modelo \code{paraphrase-multilingual-MiniLM-L12-v2}; el entorno de auditoría actual tiene Sentence Transformers 5.4.1 y PyTorch 2.11.0+cu128. \\
-Bases de Datos Vectoriales & FAISS CPU (IndexFlatIP / IndexHNSWFlat) en el entorno de benchmark original; TurboVec como dependencia opcional para cuantización a 4 bits. \\
+Entorno y CLI & Python 3.12\DIFdelbeginFL \DIFdelFL{.13, Click8.4.1 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{, Click. El entorno de prueba actual tiene Click 8.3.0. }\DIFaddendFL \\
+Modelado Vectorial & Sentence Transformers\DIFdelbeginFL \DIFdelFL{5.5.1}\DIFdelendFL , modelo \code{paraphrase-multilingual-MiniLM-L12-v2}\DIFdelbeginFL \DIFdelFL{y PyTorch 2.5.1}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{. El entorno de prueba actual tiene Sentence Transformers 5.4.1 y PyTorch 2.11.0}\DIFaddendFL +\DIFdelbeginFL \DIFdelFL{cu121 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{cu128. }\DIFaddendFL \\
+Bases de Datos Vectoriales & FAISS CPU \DIFdelbeginFL \DIFdelFL{1.14.2 }\DIFdelendFL (IndexFlatIP / IndexHNSWFlat) \DIFdelbeginFL \DIFdelFL{, TurboVec (}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{en el entorno de benchmark original. TurboVec como dependencia opcional para }\DIFaddendFL cuantización a 4 bits\DIFdelbeginFL \DIFdelFL{) }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{. }\DIFaddendFL \\
 Recuperación Léxica y \textit{Reranking} & BM25Okapi (\code{rank-bm25}) y cross-encoder \code{mmarco-mMiniLMv2-L12} \\
 Motor de Inferencia & Ollama (servidor local), modelo \code{gemma4:e4b} \\
 Procesamiento Analítico & BERTopic (UMAP+HDBSCAN), NetworkX (PageRank/TextRank) \\
@@ -175,7 +256,7 @@ Para acelerar la generación de \textit{embeddings} de más de un millón de fra
 \rowcolor{tabheader} \textbf{Componente} & \textbf{Especificación} \\
 \midrule
 Acelerador Gráfico (GPU) & NVIDIA GeForce RTX 5060 Ti (8\,GB VRAM) \\
-Motor Vectorial & PyTorch con backend CUDA en la corrida de indexación; en la auditoría actual se detectó PyTorch 2.11.0+cu128, mientras que \code{faiss-cpu}, \code{bertopic} y \code{turbovec} no estaban instalados en el intérprete activo. \\
+Motor Vectorial & PyTorch \DIFdelbeginFL \DIFdelFL{2.12.0 }\DIFdelendFL con backend CUDA \DIFdelbeginFL \DIFdelFL{13.0 habilitado y controlador NVIDIA 595.71.05 (CUDA 13.2) }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{en la corrida de indexación. En la prueba actual se detectó PyTorch 2.11.0+cu128, mientras que \code{faiss-cpu}, \code{bertopic} y \code{turbovec} no estaban instalados en el intérprete activo. }\DIFaddendFL \\
 \bottomrule
 \end{tabularx}
 \caption{Especificaciones del servidor local utilizado en la corrida documentada.}
@@ -246,7 +327,7 @@ El flujo de trabajo se divide conceptualmente en dos grandes bloques: el procesa
 
 \subsection{Diseño Agencial del Router}
 
-En lugar de construir un RAG tradicional donde toda pregunta activa incondicionalmente la base vectorial, se ha implementado un \textbf{Agente Router} de dos niveles. La clase \code{AssistantAgent} aplica primero atajos deterministas por expresiones regulares para disparadores explícitos (resumen, fecha, tópicos, peticiones web y consultas de actualidad) y, ante consultas ambiguas, delega la decisión en el \textbf{LLM}, que selecciona la herramienta devolviendo un objeto JSON (\code{function-calling} ligero). Si el LLM no está disponible o su salida es inválida, el sistema recae con seguridad en la herramienta RAG. Esto ahorra tokens, reduce la latencia previa a mostrar la herramienta activa y mantiene un comportamiento robusto. El agente conserva además \textbf{memoria conversacional}: solo reescribe las preguntas de seguimiento cuando hay referencias anafóricas reales al historial.
+En lugar de construir un RAG tradicional donde toda pregunta activa incondicionalmente la base vectorial, se ha implementado un \textbf{Agente Router} de dos niveles. La clase \code{AssistantAgent} aplica primero atajos deterministas por expresiones regulares para disparadores explícitos (resumen, fecha, tópicos\DIFaddbegin \DIFadd{, peticiones web y consultas de actualidad}\DIFaddend ) y, ante consultas ambiguas, delega la decisión en el \textbf{LLM}, que selecciona la herramienta devolviendo un objeto JSON (\code{function-calling} ligero). Si el LLM no está disponible o su salida es inválida, el sistema recae con seguridad en la herramienta RAG. Esto ahorra tokens, reduce \DIFdelbegin \DIFdel{alucinaciones }\DIFdelend \DIFaddbegin \DIFadd{la latencia previa a mostrar la herramienta activa }\DIFaddend y mantiene un comportamiento robusto\DIFdelbegin \DIFdel{y trazable}\DIFdelend . El agente conserva además \textbf{memoria conversacional}: \DIFaddbegin \DIFadd{solo }\DIFaddend reescribe las preguntas de seguimiento \DIFdelbegin \DIFdel{como consultas autónomas antes de recuperar}\DIFdelend \DIFaddbegin \DIFadd{cuando hay referencias anafóricas reales al historial}\DIFaddend .
 
 \begin{table}[htbp]
 \centering
@@ -257,32 +338,36 @@ En lugar de construir un RAG tradicional donde toda pregunta activa incondiciona
 \rowcolor{tabheader} \textbf{Herramienta} & \textbf{Patrón de activación} & \textbf{Ejecución algorítmica} \\
 \midrule
 \code{RagTool} & (Fallback por defecto) & Ejecuta FAISS y BM25, fusiona con RRF e inyecta fragmentos al LLM. \\
-\code{SummaryTool} & \textit{resume, ideas principales...} & Calcula TextRank extractivo sobre el contexto recuperado y devuelve frases existentes. \\
-\code{TopicTool} & \textit{tópicos/clusters del corpus...} & Extrae información del archivo JSON de clústeres de BERTopic. \\
+\code{SummaryTool} & \textit{resume, ideas principales...} & Calcula TextRank \DIFdelbeginFL \DIFdelFL{sobre los documentos y devuelve un resumen exacto}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{extractivo sobre el contexto recuperado y devuelve frases existentes}\DIFaddendFL . \\
+\code{TopicTool} & \textit{\DIFdelbeginFL \DIFdelFL{tópico, tema, cluster}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{tópicos/clusters del corpus}\DIFaddendFL ...} & Extrae información del archivo JSON de clústeres de BERTopic. \\
 \code{DateTool} & \textit{qué día es hoy...} & Devuelve la fecha actual formateada en español (día de la semana incluido). \\
-\code{WebSearchTool} & \textit{internet, web, noticias, actualidad...} & Busca en DuckDuckGo información complementaria, la combina con contexto local y responde citando \code{[Web N]} cuando usa resultados externos. \\
+\code{WebSearchTool} & \DIFdelbeginFL \DIFdelFL{(Decisión del LLM) }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{\textit{internet, web, noticias, actualidad...} }\DIFaddendFL & Busca en \DIFdelbeginFL \DIFdelFL{la web (DuckDuckGo ) }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{DuckDuckGo }\DIFaddendFL información complementaria\DIFdelbeginFL \DIFdelFL{y la fusiona con el contexto local }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{, la combina con contexto local y responde citando \code{[Web N]} cuando usa resultados externos}\DIFaddendFL . \\
 \bottomrule
 \end{tabularx}
 \caption{Inventario de herramientas del Agente Router.}
 \end{table}
 
-Las respuestas generativas se emiten en \textit{streaming} mediante Ollama cuando pasan por el LLM. Las rutas deterministas sin LLM, como fecha y resumen extractivo, emiten texto por bloques o frases para que el usuario no espere a que termine toda la operación. Además, las fuentes mostradas al final de una respuesta RAG o web se filtran por citas explícitas: solo se listan aquellas que aparezcan realmente como \code{[Fuente N]} o \code{[Web N]} en la respuesta. Esto evita presentar como evidencias documentos recuperados por vecindad cuando el modelo ha declarado que no hay contexto suficiente.
+\DIFaddbegin \DIFadd{Las respuestas generativas se emiten en \textit{streaming} mediante Ollama cuando pasan por el LLM. Las rutas deterministas sin LLM, como fecha y resumen extractivo, emiten texto por bloques o frases para que el usuario no espere a que termine toda la operación. Además, las fuentes mostradas al final de una respuesta RAG o web se filtran por citas explícitas: solo se listan aquellas que aparezcan realmente como \code{[Fuente N]} o \code{[Web N]} en la respuesta. Esto evita presentar como evidencias documentos recuperados por vecindad cuando el modelo ha declarado que no hay contexto suficiente.
+}
 
-\subsection{Resumen extractivo y determinismo}
+\subsection{\DIFadd{Resumen extractivo y determinismo}}
 
-El módulo de resumen no es un resumen abstractivo generado por el LLM. Es un \textbf{resumen extractivo}: selecciona frases literales presentes en el contexto recuperado o en el fichero de entrada. La implementación se encuentra en \code{summarization/extractive.py} y combina tres pasos:
+\DIFadd{El módulo de resumen no es un resumen abstractivo generado por el LLM. Es un \textbf{resumen extractivo}: selecciona frases literales presentes en el contexto recuperado o en el fichero de entrada. La implementación se encuentra en \code{summarization/extractive.py} y combina tres pasos:
+}
 
 \begin{enumerate}
-  \item Segmentación del texto en frases suficientemente largas.
-  \item Cálculo de embeddings por frase y construcción de un grafo de similitud coseno.
-  \item Aplicación de TextRank/PageRank para centralidad y selección con MMR para penalizar redundancia.
-\end{enumerate}
+  \item \DIFadd{Segmentación del texto en frases suficientemente largas.
+  }\item \DIFadd{Cálculo de embeddings por frase y construcción de un grafo de similitud coseno.
+  }\item \DIFadd{Aplicación de TextRank/PageRank para centralidad y selección con MMR para penalizar redundancia.
+}\end{enumerate}
 
-Cuando el usuario pregunta \textit{``Resume lo que tengas sobre X''}, el agente limpia la consulta para recuperar por el tema principal, obtiene contexto con RAG y después resume ese contexto. Antes de aplicar TextRank se eliminan cabeceras de contexto como \code{[Fuente N]}, \code{Ruta:} y \code{Texto:}; el resumen se calcula sobre el contenido documental, no sobre metadatos. Por tanto, el resumen es tan estable como lo sean la consulta efectiva y el contexto recuperado. Con el mismo índice, mismo \code{top\_k}, mismo historial conversacional y mismo contexto de entrada, el algoritmo extractivo debe devolver el mismo resultado. Si cambia el historial, se activa un índice aproximado, cambia el reranker o se recuperan fragmentos distintos, el resumen también puede cambiar.
+\DIFadd{Cuando el usuario pregunta \textit{``Resume lo que tengas sobre X''}, el agente limpia la consulta para recuperar por el tema principal, obtiene contexto con RAG y después resume ese contexto. Antes de aplicar TextRank se eliminan cabeceras de contexto como \code{[Fuente N]}, \code{Ruta:} y \code{Texto:}; el resumen se calcula sobre el contenido documental, no sobre metadatos. Por tanto, el resumen es tan estable como lo sean la consulta efectiva y el contexto recuperado. Con el mismo índice, mismo \code{top\_k}, mismo historial conversacional y mismo contexto de entrada, el algoritmo extractivo debe devolver el mismo resultado. Si cambia el historial, se activa un índice aproximado, cambia el reranker o se recuperan fragmentos distintos, el resumen también puede cambiar.
+}
 
-La revisión del sistema detectó tres fuentes de variabilidad que debían controlarse: la intención explícita de resumen podía perderse si la reescritura conversacional eliminaba la palabra \textit{``resume''}; la consulta de resumen podía incluir verbos de instrucción que deterioraban el recuperador; y la selección MMR podía desempatar frases equivalentes sin orden estable. La corrección aplicada hace que los disparadores explícitos del usuario tengan prioridad sobre la reescritura, que la búsqueda se haga por el tema limpio y que los empates del resumen se resuelvan por orden de frase. Esto no convierte el RAG completo en determinista bajo cualquier configuración, pero sí hace determinista el resumen cuando recibe el mismo texto de entrada.
+\DIFadd{La revisión del sistema detectó tres fuentes de variabilidad que debían controlarse: la intención explícita de resumen podía perderse si la reescritura conversacional eliminaba la palabra \textit{``resume''}, la consulta de resumen podía incluir verbos de instrucción que deterioraban el recuperador, y la selección MMR podía desempatar frases equivalentes sin orden estable. La corrección aplicada hace que los disparadores explícitos del usuario tengan prioridad sobre la reescritura, que la búsqueda se haga por el tema limpio y que los empates del resumen se resuelvan por orden de frase. Esto no convierte el RAG completo en determinista bajo cualquier configuración, pero sí hace determinista el resumen cuando recibe el mismo texto de entrada.
+}
 
-\FloatBarrier
+\DIFaddend \FloatBarrier
 \newpage
 %% =========================================================================
 \section{Corpus de Conocimiento (MIRACL-es)}
@@ -312,72 +397,71 @@ Tópicos offline entregados & BERTopic sobre 100\,198 documentos, 1\,413 filas d
 \caption{Estadísticas del corpus de entrega tras la fase de ingestión.}
 \end{table}
 
-\subsection{Auditoría del modelado de tópicos}
+\DIFaddbegin \subsection{\DIFadd{Adquisición, Limpieza y Preprocesado}}
 
-El fichero \code{data/reports/topics.json} fue generado con BERTopic sobre 100\,198 documentos. Es importante distinguir entre \textit{clusters reales} y el identificador especial \code{-1}. En BERTopic, \code{-1} no representa un tema semántico útil, sino documentos considerados \textit{outliers} o no asignados a ningún cluster. Por tanto, el reporte actual no contiene siete tópicos: contiene \textbf{1\,412 clusters reales} más \textbf{34\,698 documentos outlier}.
+\DIFadd{Antes de indexar los documentos en la base vectorial, se aplicaron varios pasos de limpieza y preparación de los textos para asegurar que la información fuera legible y útil:
+}
+
+\begin{itemize}
+  \item \DIFadd{\textbf{Adquisición de datos:} El módulo \code{miracl.py} descarga y lee los datos en \textit{streaming}, lo que evita saturar la memoria RAM al procesar el gran volumen del dataset original.
+  }\item \DIFadd{\textbf{Limpieza de texto:} En \code{utils/text.py} se usa la librería \code{ftfy} para arreglar automáticamente errores de codificación (por ejemplo, ver ``Ã¡'' en lugar de ``á'') y se eliminan caracteres invisibles que puedan dar problemas.
+  }\item \DIFadd{\textbf{Filtro de seguridad:} Se aplican expresiones regulares (\code{strip\_prompt\_injection}) para limpiar comandos maliciosos que puedan venir incrustados en los textos (del tipo \textit{``Ignore all previous instructions...''}), antes de que lleguen al modelo de lenguaje.
+  }\item \DIFadd{\textbf{Partición de textos (Chunking):} El módulo \code{chunking.py} no corta las frases de forma abrupta por longitud. En lugar de eso, busca el punto o salto de línea más cercano dentro del margen de solapamiento para mantener las frases enteras y preservar su sentido original.
+}\end{itemize}
+
+\subsection{\DIFadd{Revisión del modelado de tópicos}}
+
+\DIFadd{El fichero \code{data/reports/topics.json} fue generado con BERTopic sobre 100\,198 documentos. Es importante distinguir entre \textit{clusters reales} y el identificador especial \code{-1}. En BERTopic, \code{-1} no representa un tema semántico útil, sino documentos considerados \textit{outliers} o no asignados a ningún cluster. Por tanto, el reporte actual no contiene siete tópicos: contiene \textbf{1\,412 clusters reales} más \textbf{34\,698 documentos outlier}.
+}
 
 \begin{table}[htbp]
 \centering
 \rowcolors{2}{tabheader!40}{white}
 \begin{tabularx}{\textwidth}{X r}
 \toprule
-\rowcolor{tabheader} \textbf{Campo del reporte de tópicos} & \textbf{Valor} \\
+\rowcolor{tabheader} \DIFaddFL{\textbf{Campo del reporte de tópicos} }& \DIFaddFL{\textbf{Valor} }\\
 \midrule
-Método & BERTopic \\
-Documentos modelados & 100\,198 \\
-Filas en \code{topic\_info} & 1\,413 \\
-Clusters reales, excluyendo \code{-1} & 1\,412 \\
-Documentos outlier en \code{-1} & 34\,698 \\
+\DIFaddFL{Método }& \DIFaddFL{BERTopic }\\
+\DIFaddFL{Documentos modelados }& \DIFaddFL{100\,198 }\\
+\DIFaddFL{Filas en \code{topic\_info} }& \DIFaddFL{1\,413 }\\
+\DIFaddFL{Clusters reales, excluyendo \code{-1} }& \DIFaddFL{1\,412 }\\
+\DIFaddFL{Documentos outlier en \code{-1} }& \DIFaddFL{34\,698 }\\
 \bottomrule
 \end{tabularx}
-\caption{Lectura correcta del reporte \code{topics.json}.}
+\caption{\DIFaddFL{Lectura correcta del reporte \code{topics.json}.}}
 \end{table}
 
-La confusión aparece cuando la herramienta de tópicos muestra solo los primeros resultados por brevedad: si se limita la salida a unas pocas filas y una de ellas es \code{-1}, puede parecer que el corpus tiene únicamente unos pocos tópicos útiles. La lectura correcta es que la lista presentada en chat es una \textbf{vista resumida} de los clusters mayores, no el número total de clusters generados.
+\DIFadd{La confusión aparece cuando la herramienta de tópicos muestra solo los primeros resultados por brevedad: si se limita la salida a unas pocas filas y una de ellas es \code{-1}, puede parecer que el corpus tiene únicamente unos pocos tópicos útiles. La lectura correcta es que la lista presentada en chat es una \textbf{vista resumida} de los clusters mayores, no el número total de clusters generados.
+}
 
 \begin{center}
 \small
 \rowcolors{2}{tabheader!40}{white}
-\begin{longtable}{r r p{0.68\textwidth}}
-\caption{Veinticinco clusters reales más grandes del reporte BERTopic, excluyendo \code{-1}. El listado completo está en \code{data/reports/topics.json}.}\\
+\begin{longtable}{r r m{0.68\textwidth}}
+\caption{\DIFaddFL{Diez clusters reales más grandes del reporte BERTopic, excluyendo \code{-1}. El listado completo está en \code{data/reports/topics.json}.}}\\
 \toprule
-\rowcolor{tabheader} \textbf{Cluster} & \textbf{Docs} & \textbf{Representación principal} \\
+\rowcolor{tabheader} \DIFaddFL{\textbf{Cluster} }& \DIFaddFL{\textbf{Docs} }& \DIFaddFL{\textbf{Representación principal} }\\
 \midrule
 \endfirsthead
 \toprule
-\rowcolor{tabheader} \textbf{Cluster} & \textbf{Docs} & \textbf{Representación principal} \\
+\rowcolor{tabheader} \DIFaddFL{\textbf{Cluster} }& \DIFaddFL{\textbf{Docs} }& \DIFaddFL{\textbf{Representación principal} }\\
 \midrule
 \endhead
-0 & 757 & poesía, modernismo, ramón, literatura, revista, poeta \\
-1 & 660 & educación, universidad, escuelas, universidades, secundaria, alumnos \\
-2 & 559 & transporte, carreteras, autobuses, tren, líneas, estación \\
-3 & 499 & cocina, gastronomía, platos, arroz, carne, queso \\
-4 & 498 & mesoamérica, tlaxcala, pueblos, mayas, maya, teotihuacán \\
-5 & 453 & clima, temperaturas, precipitaciones, mm, lluvias, temperatura \\
-6 & 440 & canadá, ontario, brunswick, manitoba, nuevo brunswick, alberta \\
-7 & 361 & televisión, hd, alta definición, radio, televisión alta, canal \\
-8 & 293 & mozart, bach, schubert, johann, wolfgang, johann sebastian \\
-9 & 277 & unidades, kilogramo, unidad, litro, sistema internacional, metro \\
-10 & 262 & carter, bush, clinton, reagan, jimmy carter, jimmy \\
-11 & 236 & franco, francisco franco, azaña, francisco, batalla, civil española \\
-12 & 235 & cine, cine mexicano, mexicano, buñuel, película, películas \\
-13 & 231 & alfonso, aragón, castilla, fernando, sancho, alfonso vi \\
-14 & 230 & primer ministro, ministros, asamblea, ministro, parlamento, cámara \\
-15 & 226 & corán, islam, mahoma, musulmanes, profeta, árabe \\
-16 & 225 & religión, iglesia, católicos, católica, protestantes, religiones \\
-17 & 220 & río, ríos, cuenca, afluentes, aguas, lago \\
-18 & 213 & fármaco, medicamento, farmacia, farmacéutico, fármacos, medicamentos \\
-19 & 212 & bolívar, simón, simón bolívar, bolivia, caracas, sucre \\
-20 & 202 & cerebelo, nervioso, sistema nervioso, fibras, cerebro, encéfalo \\
-21 & 200 & vino, vinos, cerveza, uva, moscatel, uvas \\
-22 & 200 & presidente, presidente chile, nación argentina, presidente nación, chile, constitución \\
-23 & 199 & magnético, campo magnético, maxwell, campo, ecuaciones maxwell, ecuaciones \\
-24 & 199 & karate, taekwondo, ryu, marciales, marcial, artes marciales \\
+\DIFaddFL{0 }& \DIFaddFL{757 }& \DIFaddFL{poesía, modernismo, ramón, literatura, revista, poeta }\\
+\DIFaddFL{1 }& \DIFaddFL{660 }& \DIFaddFL{educación, universidad, escuelas, universidades, secundaria, alumnos }\\
+\DIFaddFL{2 }& \DIFaddFL{559 }& \DIFaddFL{transporte, carreteras, autobuses, tren, líneas, estación }\\
+\DIFaddFL{3 }& \DIFaddFL{499 }& \DIFaddFL{cocina, gastronomía, platos, arroz, carne, queso }\\
+\DIFaddFL{4 }& \DIFaddFL{498 }& \DIFaddFL{mesoamérica, tlaxcala, pueblos, mayas, maya, teotihuacán }\\
+\DIFaddFL{5 }& \DIFaddFL{453 }& \DIFaddFL{clima, temperaturas, precipitaciones, mm, lluvias, temperatura }\\
+\DIFaddFL{6 }& \DIFaddFL{440 }& \DIFaddFL{canadá, ontario, brunswick, manitoba, nuevo brunswick, alberta }\\
+\DIFaddFL{7 }& \DIFaddFL{361 }& \DIFaddFL{televisión, hd, alta definición, radio, televisión alta, canal }\\
+\DIFaddFL{8 }& \DIFaddFL{293 }& \DIFaddFL{mozart, bach, schubert, johann, wolfgang, johann sebastian }\\
+\DIFaddFL{9 }& \DIFaddFL{277 }& \DIFaddFL{unidades, kilogramo, unidad, litro, sistema internacional, metro }\\
 \bottomrule
 \end{longtable}
 \end{center}
 
-\FloatBarrier
+\DIFaddend \FloatBarrier
 
 %% =========================================================================
 \section{Resultados de Evaluación IR}
@@ -385,28 +469,30 @@ La confusión aparece cuando la herramienta de tópicos muestra solo los primero
 
 El rendimiento de recuperación se evaluó sobre una muestra de \textbf{50 consultas} de MIRACL-es (\textit{dev}) con $k=10$, comparando tres configuraciones del motor frente al mismo \textit{ground-truth}.
 
-El conjunto de evaluación local no es el MIRACL completo: durante la adquisición se conservan las consultas cuyos documentos relevantes están disponibles dentro del subconjunto local de 1M documentos. Esto hace que las métricas sean válidas para comparar configuraciones internas del proyecto, pero no deben presentarse como el resultado oficial de MIRACL-es completo. Además, los reportes JSON guardan las listas recuperadas tal como salen del motor; pueden aparecer identificadores repetidos si dos estrategias recuperan el mismo documento. Las métricas se calculan sobre IDs únicos mediante \code{evaluate\_ids}, evitando contar dos veces el mismo documento relevante.
+\DIFaddbegin \DIFadd{El conjunto de evaluación local no es el MIRACL completo: durante la adquisición se conservan las consultas cuyos documentos relevantes están disponibles dentro del subconjunto local de 1M documentos. Esto hace que las métricas sean válidas para comparar configuraciones internas del proyecto, pero no deben presentarse como el resultado oficial de MIRACL-es completo. Además, los reportes JSON guardan las listas recuperadas tal como salen del motor; pueden aparecer identificadores repetidos si dos estrategias recuperan el mismo documento. Las métricas se calculan sobre IDs únicos mediante \code{evaluate\_ids}, evitando contar dos veces el mismo documento relevante.
+}
 
-\subsection{Métricas obtenidas}
+\DIFaddend \subsection{Métricas obtenidas}
 
 \begin{table}[htbp]
 \centering
 \rowcolors{2}{tabheader!40}{white}
 \begin{tabularx}{\textwidth}{X c c c c}
 \toprule
-\rowcolor{tabheader} \textbf{Motor de Recuperación} & \textbf{P@10} & \textbf{R@10} & \textbf{MRR} & \textbf{nDCG@10} \\
+\rowcolor{tabheader} \textbf{Motor de Recuperación} & \textbf{P@\DIFdelFL{10}\DIFaddFL{5}} & \textbf{R@\DIFdelFL{10}\DIFaddFL{5}} & \textbf{MRR} & \textbf{nDCG@\DIFdelFL{10}\DIFaddFL{5}} \\
 \midrule
-Motor Léxico (BM25) & 0,072 & 0,341 & 0,264 & 0,248 \\
-Motor Semántico (FAISS) & 0,112 & 0,451 & 0,451 & 0,379 \\
-\rowcolor{green!8} \textbf{Fusión Híbrida (FAISS+BM25, RRF)} & \textbf{0,108} & \textbf{0,482} & \textbf{0,542} & \textbf{0,435} \\
+Motor Léxico (BM25) & \DIFdelFL{0,072}\DIFaddFL{0,092} & \DIFdelFL{0,341}\DIFaddFL{0,267} & \DIFdelFL{0,264}\DIFaddFL{0,247} & \DIFdelFL{0,248}\DIFaddFL{0,215} \\
+Motor Semántico (FAISS) & \DIFdelFL{0,112}\DIFaddFL{0,176} & \DIFdelFL{0,451}\DIFaddFL{0,370} & \DIFdelFL{0,451}\DIFaddFL{0,445} & \DIFdelFL{0,379}\DIFaddFL{0,350} \\
+\rowcolor{green!8} \textbf{Fusión Híbrida (FAISS+BM25, RRF)} & \textbf{\DIFdelFL{0,108}\DIFaddFL{0,148}} & \textbf{\DIFdelFL{0,482}\DIFaddFL{0,376}} & \textbf{\DIFdelFL{0,542}\DIFaddFL{0,448}} & \textbf{\DIFdelFL{0,435}\DIFaddFL{0,348}} \\
 \bottomrule
 \end{tabularx}
-\caption{Métricas sobre el corpus 1M de entrega (50 \textit{queries}, $k=10$).}
+\caption{Métricas sobre el corpus 1M de entrega (50 \textit{queries}, $k=\DIFdelFL{10}\DIFaddFL{5}$).}
 \end{table}
 
-\subsection{Qué mide cada métrica}
+\DIFaddbegin \subsection{\DIFadd{Qué mide cada métrica}}
 
-El proyecto mide la recuperación antes de la generación del LLM. Esto es deliberado: en un sistema RAG, si el recuperador no coloca evidencia correcta en las primeras posiciones, el generador no puede responder de forma fiable aunque el modelo sea bueno.
+\DIFadd{El proyecto mide la recuperación antes de la generación del LLM. Esto es deliberado: en un sistema RAG, si el recuperador no coloca evidencia correcta en las primeras posiciones, el generador no puede responder de forma fiable aunque el modelo sea bueno.
+}
 
 \begin{table}[htbp]
 \centering
@@ -414,55 +500,93 @@ El proyecto mide la recuperación antes de la generación del LLM. Esto es delib
 \rowcolors{2}{tabheader!40}{white}
 \begin{tabularx}{\textwidth}{l X X}
 \toprule
-\rowcolor{tabheader} \textbf{Métrica} & \textbf{Definición} & \textbf{Interpretación para RAG} \\
+\rowcolor{tabheader} \DIFaddFL{\textbf{Métrica} }& \DIFaddFL{\textbf{Definición} }& \DIFaddFL{\textbf{Interpretación para RAG} }\\
 \midrule
-\textit{Precision@k} & Proporción de resultados del top-$k$ que son relevantes. & Mide ruido en el contexto. Puede ser baja si los qrels tienen pocos relevantes por consulta. \\
-\textit{Recall@k} & Proporción de documentos relevantes esperados que aparecen en el top-$k$. & Mide cobertura; es clave para saber si el contexto contiene evidencia suficiente. \\
-\textit{MRR} & Recíproco de la posición del primer resultado relevante. & Mide si la primera evidencia útil aparece arriba, donde más influye en el prompt. \\
-\textit{nDCG@k} & Ganancia descontada normalizada por posición. & Mide calidad global del ranking, premiando relevantes en posiciones tempranas. \\
-\textit{Latencia} & Tiempo medio por consulta o por búsqueda semántica aislada. & Mide viabilidad interactiva, pero depende mucho de si se incluye BM25, FAISS, LLM o solo el índice vectorial. \\
-\textit{Memoria vectorial} & Tamaño ocupado por índices y embeddings. & Permite comparar FAISS \textit{float32} frente a cuantización TurboVec. \\
+\DIFaddFL{\textit{Precision@k} }& \DIFaddFL{Proporción de resultados del top-$k$ que son relevantes. }& \DIFaddFL{Mide ruido en el contexto. Puede ser baja si los qrels tienen pocos relevantes por consulta. }\\
+\DIFaddFL{\textit{Recall@k} }& \DIFaddFL{Proporción de documentos relevantes esperados que aparecen en el top-$k$. }& \DIFaddFL{Mide cobertura y es clave para saber si el contexto contiene evidencia suficiente. }\\
+\DIFaddFL{\textit{MRR} }& \DIFaddFL{Recíproco de la posición del primer resultado relevante. }& \DIFaddFL{Mide si la primera evidencia útil aparece arriba, donde más influye en el prompt. }\\
+\DIFaddFL{\textit{nDCG@k} }& \DIFaddFL{Ganancia descontada normalizada por posición. }& \DIFaddFL{Mide calidad global del ranking, premiando relevantes en posiciones tempranas. }\\
+\DIFaddFL{\textit{Latencia} }& \DIFaddFL{Tiempo medio por consulta o por búsqueda semántica aislada. }& \DIFaddFL{Mide viabilidad interactiva, pero depende mucho de si se incluye BM25, FAISS, LLM o solo el índice vectorial. }\\
+\DIFaddFL{\textit{Memoria vectorial} }& \DIFaddFL{Tamaño ocupado por índices y embeddings. }& \DIFaddFL{Permite comparar FAISS \textit{float32} frente a cuantización TurboVec. }\\
 \bottomrule
 \end{tabularx}
-\caption{Métricas implementadas y usadas en los reportes de evaluación.}
+\caption{\DIFaddFL{Métricas implementadas y usadas en los reportes de evaluación.}}
 \end{table}
 
-Además de estas métricas, el sistema podría extenderse con métricas de generación final: ROUGE o BERTScore para resumen si existieran referencias humanas, precisión de citas para comprobar si cada afirmación está soportada, \textit{faithfulness/groundedness} para medir alucinaciones, Exact Match/F1 para preguntas cerradas, latencia \textit{end-to-end} del chat y tasa de \textit{fallback} del router. No se reportan como métricas principales porque la entrega cuenta con qrels expertos de recuperación, no con respuestas humanas completas ni resúmenes de referencia.
+\DIFadd{Además de estas métricas, el sistema podría extenderse con métricas de generación final: ROUGE o BERTScore para resumen si existieran referencias humanas, precisión de citas para comprobar si cada afirmación está soportada, \textit{faithfulness/groundedness} para medir alucinaciones, Exact Match/F1 para preguntas cerradas, latencia \textit{end-to-end} del chat y tasa de \textit{fallback} del router. No se reportan como métricas principales porque la entrega cuenta con qrels expertos de recuperación, no con respuestas humanas completas ni resúmenes de referencia.
+}
 
-\subsection{Análisis: del baseline al sistema completo}
+\DIFaddend \subsection{Análisis: del baseline al sistema completo}
 
 La progresión por capas evidencia el aporte de cada componente sobre el \textit{baseline} léxico:
 
 \begin{itemize}
-  \item \textbf{Híbrido vs. baselines:} la \textit{Reciprocal Rank Fusion} (RRF) mejora consistentemente el \textit{Recall@10}, el MRR y el nDCG@10 respecto a BM25 y FAISS por separado. El léxico aporta coincidencias exactas y el semántico captura paráfrasis. Su fusión eleva el MRR a \textbf{0,542} y el nDCG@10 a \textbf{0,435}, demostrando que no solo se recuperan más documentos relevantes, sino que se posicionan de forma mucho más óptima en el ranking.
+  \item \textbf{Híbrido vs. baselines:} la \textit{Reciprocal Rank Fusion} (RRF) mejora consistentemente el \textit{Recall@\DIFdel{10}\DIFadd{5}}, el MRR y el nDCG@\DIFdel{10}\DIFadd{5} respecto \DIFdel{a BM25 y FAISS por separado. El léxico aporta coincidencias exactas y el semántico captura paráfrasis. }\DIFadd{al motor puramente léxico. }Su fusión \DIFdel{eleva el }\DIFadd{logra un }MRR \DIFdel{a }\DIFadd{de }\textbf{\DIFdel{0,542}\DIFadd{0,448}} y \DIFdel{el }\DIFadd{un }nDCG@\DIFdel{10}\DIFadd{5} \DIFdel{a }\DIFadd{de }\textbf{\DIFdel{0,435}\DIFadd{0,348}}, \DIFdel{demostrando que no solo se recuperan más documentos relevantes, sino que se posicionan de forma mucho más óptima }\DIFadd{mitigando deficiencias de los métodos aislados y equilibrando el ranking global }en el ranking\DIFadd{ en los primeros puestos}.
   \item \textbf{Coste de escala:} BM25 sobre 1\,140\,063 fragmentos es el cuello de botella de la evaluación. Por ello se implementó carga parcial de índices: el modo léxico no carga FAISS ni el modelo de embeddings, y los benchmarks no cargan textos de fragmentos cuando solo necesitan \code{doc\_id}.
-  \item \textbf{Lectura del MRR (0,542):} en la muestra documentada, el primer documento relevante aparece de media alrededor de la segunda posición. Es una métrica central para RAG porque el LLM atiende preferentemente a las primeras fuentes del \textit{prompt}.
-  \item \textbf{Precisión y \textit{qrels}:} \textit{Precision@10} se mantiene moderada porque MIRACL-es marca pocos documentos relevantes por consulta. Recuperar 10 implica un techo de precisión bajo por construcción, de modo que \textit{Recall@10} y MRR son indicadores más informativos.
-  \item \textbf{Impacto del Reranking (Cross-Encoder):} En una evaluación separada sobre 200 consultas y el índice HNSW, la activación de la etapa de \textit{reranking} logra una mejora sustancial adicional. El MRR asciende de 0,481 a \textbf{0,636} y el \textit{Recall@10} pasa de 0,540 a \textbf{0,640}. Esta comparación no debe mezclarse directamente con la tabla de 50 consultas, pero sí muestra que el \textit{cross-encoder} reordena eficazmente los candidatos de la fase híbrida.
+  \item \textbf{Lectura del MRR (\DIFdel{0,542}\DIFadd{0,448}):} en la muestra documentada, el primer documento relevante aparece de media alrededor de la segunda posición. Es una métrica central para RAG porque el LLM atiende preferentemente a las primeras fuentes del \textit{prompt}.
+  \item \textbf{Precisión y \textit{qrels}:} \textit{Precision@\DIFdel{10}\DIFadd{5}} se mantiene moderada porque MIRACL-es marca pocos documentos relevantes por consulta. Recuperar \DIFdel{10}\DIFadd{5} implica un techo de precisión bajo por construcción, de modo que \textit{Recall@\DIFdel{10}\DIFadd{5}} y MRR son indicadores más informativos\DIFadd{ para asegurar el aporte de contexto al LLM}.
 \end{itemize}
 
-\FloatBarrier
+\DIFaddbegin \subsection{\DIFadd{Impacto del Reranking (Cross-Encoder)}}
+
+\DIFadd{En una evaluación separada sobre 200 consultas y el índice HNSW, la activación de la etapa de \textit{reranking} logra una mejora sustancial adicional. Esta comparación no debe mezclarse directamente con la tabla de 50 consultas, pero sí muestra que el modelo \textit{cross-encoder} reordena eficazmente los candidatos extraídos en la fase híbrida.
+}
+
+\begin{table}[htbp]
+\centering
+\rowcolors{2}{tabheader!40}{white}
+\begin{tabularx}{\textwidth}{X c c c}
+\toprule
+\rowcolor{tabheader} \DIFaddFL{\textbf{Estrategia sobre 200 consultas} }& \DIFaddFL{\textbf{P@5} }& \DIFaddFL{\textbf{R@5} }& \DIFaddFL{\textbf{MRR} }\\
+\midrule
+\DIFaddFL{Híbrido (HNSW + BM25, RRF) }& \DIFaddFL{0,179 }& \DIFaddFL{0,418 }& \DIFaddFL{0,442 }\\
+\rowcolor{green!8} \DIFaddFL{\textbf{Híbrido + Reranking (Cross-Encoder)} }& \DIFaddFL{\textbf{0,224} }& \DIFaddFL{\textbf{0,527} }& \DIFaddFL{\textbf{0,616} }\\
+\bottomrule
+\end{tabularx}
+\caption{\DIFaddFL{Impacto del Reranking en la calidad de recuperación (200 \textit{queries}, $k=5$).}}
+\end{table}
+
+\begin{center}
+\begin{tikzpicture}
+  \node[anchor=east, font=\small\bfseries] at (-0.2, 1.6) {Híbrido (RRF)};
+  \node[anchor=east, font=\small\bfseries] at (-0.2, 0.5) {Híbrido + Rerank};
+
+  \fill[barblue, rounded corners=2pt, drop shadow={opacity=0.3}] (0, 1.2) rectangle (4.42, 2.0);
+  \node[right, font=\small\bfseries, barblue] at (4.52, 1.6) {MRR 0,442};
+
+  \fill[bargreen, rounded corners=2pt, drop shadow={opacity=0.3}] (0, 0.1) rectangle (6.16, 0.9);
+  \node[right, font=\small\bfseries, bargreen] at (6.26, 0.5) {MRR 0,616};
+
+  \draw[-{Latex}, thin, gray] (0,-0.2) -- (8.5,-0.2);
+  \foreach \x/\l in {0/0, 2/0.2, 4/0.4, 6/0.6, 8/0.8} {
+    \draw[gray] (\x,-0.25) -- (\x,-0.15);
+    \node[below, font=\tiny, gray] at (\x,-0.25) {\l};
+  }
+\end{tikzpicture}
+\end{center}
+
+\DIFaddend \FloatBarrier
 \newpage
 
 %% =========================================================================
 \section{Escalabilidad RAG según el Tamaño del Corpus}
 %% =========================================================================
 
-Para justificar el uso de Big Data en arquitecturas RAG, se ha diseñado un benchmark de escalabilidad que evalúa cómo se comporta la calidad y el rendimiento del sistema híbrido al variar el volumen de fragmentos indexados. Se evaluaron colecciones de $100\,000$, $500\,000$ y la totalidad de $1\,140\,063$ \textit{chunks}.
+Para justificar el uso de Big Data en arquitecturas RAG, se ha diseñado un benchmark de escalabilidad que evalúa cómo se comporta la calidad y el rendimiento del sistema híbrido al variar el volumen de \DIFdelbegin \DIFdel{documentos base. Se fragmentó el corpus local en }\DIFdelend \DIFaddbegin \DIFadd{fragmentos indexados. Se evaluaron }\DIFaddend colecciones de $100\,000$, $500\,000$ y la totalidad de $1\,140\,063$ \DIFdelbegin \DIFdel{fragmentos}\DIFdelend \DIFaddbegin \DIFadd{\textit{chunks}}\DIFaddend .
 
 \begin{table}[htbp]
 \centering
 \rowcolors{2}{tabheader!40}{white}
 \begin{tabularx}{\textwidth}{X c c c c}
 \toprule
-\rowcolor{tabheader} \textbf{Tamaño del Corpus (chunks)} & \textbf{P@10} & \textbf{R@10} & \textbf{MRR} & \textbf{Latencia Media} \\
+\rowcolor{tabheader} \textbf{Tamaño del Corpus (chunks)} & \textbf{P@\DIFdelFL{10}\DIFaddFL{5}} & \textbf{R@\DIFdelFL{10}\DIFaddFL{5}} & \textbf{MRR} & \textbf{Latencia Media} \\
 \midrule
-100\,000 & 0,045 & 0,146 & 0,157 & 313 ms \\
-500\,000 & 0,085 & 0,370 & 0,373 & 1546 ms \\
-1\,140\,063 & 0,109 & 0,482 & 0,542 & 3520 ms \\
+100\,000 & \DIFdelFL{0,045}\DIFaddFL{0,061} & \DIFdelFL{0,146}\DIFaddFL{0,114} & \DIFdelFL{0,157}\DIFaddFL{0,130} & 313 ms \\
+500\,000 & \DIFdelFL{0,085}\DIFaddFL{0,116} & \DIFdelFL{0,370}\DIFaddFL{0,288} & \DIFdelFL{0,373}\DIFaddFL{0,309} & 1546 ms \\
+1\,140\,063 & \DIFdelFL{0,109}\DIFaddFL{0,148} & \DIFdelFL{0,482}\DIFaddFL{0,376} & \DIFdelFL{0,542}\DIFaddFL{0,448} & 3520 ms \\
 \bottomrule
 \end{tabularx}
-\caption{Evolución del desempeño en función de la cantidad de documentos procesados. (Recuperador Híbrido, 50 queries, k=10)}
+\caption{Evolución del desempeño en función de la cantidad de documentos procesados. (Recuperador Híbrido, 50 queries, $k=\DIFdelFL{10}\DIFaddFL{5}$)}
 \end{table}
 
 \begin{figure}[htbp]
@@ -471,10 +595,11 @@ Para justificar el uso de Big Data en arquitecturas RAG, se ha diseñado un benc
     \caption{Relación entre calidad de recuperación (MRR) y degradación del rendimiento (latencia) al incrementar el tamaño del corpus.}
 \end{figure}
 
+\newpage
 \textbf{Análisis de los resultados:}
 \begin{enumerate}
     \item \textbf{Mejora de la calidad de recuperación:} Se observa empíricamente que, a medida que el modelo dispone de más texto fuente, la probabilidad de recuperar el fragmento correcto aumenta. Escalar de 100k a 1.1M \textit{chunks} eleva el MRR de 0,157 a 0,542 y mejora significativamente el \textit{Recall}.
-    \item \textbf{Impacto en el rendimiento:} Como era de esperar, la latencia total de la recuperación crece de forma aproximadamente lineal con el número de \textit{chunks}, alcanzando 3.520 ms por consulta al procesar 1\,140\,063 fragmentos. Cabe destacar que el principal cuello de botella de esta métrica proviene del motor léxico BM25, ejecutado en Python puro, mientras que la parte semántica vectorial puede optimizarse fuertemente.
+    \item \textbf{Impacto en el rendimiento:} Como era de esperar, la latencia total de la recuperación crece \DIFdelbegin \DIFdel{linealmente $O(N)$, alcanzando un promedio de más de 3.5 segundos }\DIFdelend \DIFaddbegin \DIFadd{de forma aproximadamente lineal con el número de \textit{chunks}, alcanzando 3.520 ms }\DIFaddend por consulta al procesar \DIFdelbegin \DIFdel{el millón de documentos}\DIFdelend \DIFaddbegin \DIFadd{1\,140\,063 fragmentos}\DIFaddend . Cabe destacar que el principal cuello de botella de esta métrica proviene del motor léxico BM25, ejecutado en Python puro, mientras que la parte semántica vectorial puede optimizarse fuertemente.
     \item \textbf{Justificación arquitectónica:} Este aumento en la latencia y en el consumo de memoria al evaluar grandes volúmenes de documentos justifica la integración de las optimizaciones descritas en las siguientes secciones: la \textbf{Indexación HNSW} (para reducir el tiempo de búsqueda semántica en FAISS) y la cuantización \textbf{TurboVec} (para optimizar el uso de memoria RAM).
 \end{enumerate}
 
@@ -493,18 +618,39 @@ HNSW representa los embeddings como un grafo navegable. En vez de comparar la co
 \toprule
 \rowcolor{tabheader} \textbf{Tamaño del índice} & \textbf{FAISS Flat} & \textbf{FAISS HNSW} & \textbf{Reducción} \\
 \midrule
-100\,000 vectores & 5,156 ms & 0,165 ms & 31,2x \\
-500\,000 vectores & 25,720 ms & 0,415 ms & 62,0x \\
-1\,140\,063 vectores & 59,579 ms & 0,434 ms & 137,3x \\
+100\,000 vectores & \DIFdelbeginFL \DIFdelFL{0,983 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{5,156 }\DIFaddendFL ms & 0,\DIFdelbeginFL \DIFdelFL{100 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{165 }\DIFaddendFL ms & \DIFdelbeginFL \DIFdelFL{9,8x }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{31,2x }\DIFaddendFL \\
+500\,000 vectores & \DIFdelbeginFL \DIFdelFL{16,178 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{25,720 }\DIFaddendFL ms & 0,\DIFdelbeginFL \DIFdelFL{135 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{415 }\DIFaddendFL ms & \DIFdelbeginFL \DIFdelFL{119,8x }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{62,0x }\DIFaddendFL \\
+1\,140\,063 vectores & \DIFdelbeginFL \DIFdelFL{42,035 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{59,579 }\DIFaddendFL ms & 0,\DIFdelbeginFL \DIFdelFL{096 }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{434 }\DIFaddendFL ms & \DIFdelbeginFL \DIFdelFL{437,9x }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{137,3x }\DIFaddendFL \\
 \bottomrule
 \end{tabularx}
-\caption{Comparativa corregida de latencia semántica exacta frente a HNSW. Se mide la mediana de ms/consulta con ejecución query-a-query, 200 consultas, $k=10$, 5 repeticiones, 1 warmup y 1 hilo FAISS.}
+\caption{Comparativa \DIFaddbeginFL \DIFaddFL{corregida }\DIFaddendFL de latencia semántica exacta frente a HNSW. \DIFdelbeginFL \DIFdelFL{Resultados obtenidos }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{Se mide la mediana de ms/consulta }\DIFaddendFL con \DIFdelbeginFL \DIFdelFL{\code{scripts/bench\_scaling\_techniques.py}}\DIFdelendFL \DIFaddbeginFL \DIFaddFL{ejecución query-a-query}\DIFaddendFL , 200 consultas\DIFdelbeginFL \DIFdelFL{y }\DIFdelendFL \DIFaddbeginFL \DIFaddFL{, }\DIFaddendFL $k=10$\DIFaddbeginFL \DIFaddFL{, 5 repeticiones, 1 warmup y 1 hilo FAISS}\DIFaddendFL .}
 \end{table}
 
-\textit{Corrección metodológica:} la tabla anterior del informe usaba una única búsqueda batched de FAISS y daba un resultado no defendible: HNSW aparecía con menos latencia en 1,14M que en 500k vectores. Se ha regenerado el benchmark midiendo cada consulta por separado, igualando la metodología entre índices, fijando un hilo de FAISS y tomando la mediana de cinco repeticiones. Con esta medición, Flat crece de forma clara con el tamaño del índice y HNSW también aumenta de 100k a 500k, quedando prácticamente estabilizado entre 500k y 1,14M por el carácter sublineal de la navegación en grafo.
+\DIFaddbegin \DIFadd{\textit{Nota sobre la medición:} Las pruebas iniciales del benchmark presentaban un sesgo metodológico al procesar las consultas de evaluación simultáneamente (\textit{batched search}). Bajo esta configuración, el motor FAISS distribuye la carga en múltiples hilos y altera los tiempos de respuesta debido a la optimización interna de la memoria caché, lo que resultó en tiempos artificialmente bajos para colecciones grandes. Para medir con rigor la latencia real que experimenta un usuario en el sistema interactivo, el experimento fue rediseñado para procesar las consultas secuencialmente (\textit{query-by-query}). Con esta aproximación corregida, se observa una degradación de rendimiento lineal y previsible en la búsqueda exacta (\code{IndexFlatIP}) al escalar el corpus, mientras que la navegación en grafo del índice HNSW se estabiliza, manteniendo tiempos de respuesta inferiores al milisegundo.
+}
 
-\begin{center}
-\begin{tikzpicture}
+\DIFaddend \begin{center}
+\DIFdelbegin %DIFDELCMD < \begin{tikzpicture}
+%DIFDELCMD <   \node[anchor=east, font=\small\bfseries] at (-0.2, 1.6) {FAISS Flat};
+%DIFDELCMD <   \node[anchor=east, font=\small\bfseries] at (-0.2, 0.5) {FAISS HNSW};
+%DIFDELCMD <
+
+%DIFDELCMD <   \fill[barred, rounded corners=2pt, drop shadow={opacity=0.3}] (0, 1.2) rectangle (10, 2.0);
+%DIFDELCMD <   \node[white, font=\small\bfseries] at (5, 1.6) {42,0 ms};
+%DIFDELCMD <
+
+%DIFDELCMD <   \fill[bargreen, rounded corners=2pt, drop shadow={opacity=0.3}] (0, 0.1) rectangle (0.23, 0.9);
+%DIFDELCMD <   \node[right, font=\small\bfseries, bargreen] at (0.33, 0.5) {0,096 ms};
+%DIFDELCMD <
+
+%DIFDELCMD <   \draw[-{Latex}, thin, gray] (0,-0.2) -- (10.5,-0.2);
+%DIFDELCMD <   \foreach \x/\l in {0/0, 2.5/10, 5/21, 7.5/31, 10/42} {
+%DIFDELCMD <     \draw[gray] (\x,-0.25) -- (\x,-0.15);
+%DIFDELCMD <     \node[below, font=\tiny, gray] at (\x,-0.25) {\l\,ms};
+%DIFDELCMD <   }
+%DIFDELCMD < \end{tikzpicture}
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \begin{tikzpicture}
   \node[anchor=east, font=\small\bfseries] at (-0.2, 1.6) {FAISS Flat};
   \node[anchor=east, font=\small\bfseries] at (-0.2, 0.5) {FAISS HNSW};
 
@@ -520,9 +666,7 @@ HNSW representa los embeddings como un grafo navegable. En vez de comparar la co
     \node[below, font=\tiny, gray] at (\x,-0.25) {\l\,ms};
   }
 \end{tikzpicture}
-\end{center}
-
-HNSW es útil cuando el cuello de botella principal es el tiempo de respuesta. El resultado corregido muestra que \code{IndexFlatIP} crece con el tamaño del índice porque escanea todos los vectores, mientras que HNSW explora un grafo aproximado y se mantiene en órdenes de magnitud inferiores. La contrapartida es que la búsqueda deja de ser exacta, por lo que \code{IndexFlatIP} se mantiene como referencia reproducible y HNSW como opción de escalado.
+\DIFaddend \end{center}
 
 \FloatBarrier
 \newpage
@@ -538,15 +682,15 @@ Escalar a millones de documentos presenta una barrera física: los vectores \tex
 \rowcolors{2}{tabheader!40}{white}
 \begin{tabularx}{\textwidth}{X c c c c}
 \toprule
-\rowcolor{tabheader} \textbf{Tipo de Índice vectorial} & \textbf{P@10} & \textbf{R@10} & \textbf{MRR} & \textbf{Memoria utilizada} \\
+\rowcolor{tabheader} \textbf{Tipo de Índice vectorial} & \textbf{P@\DIFdelFL{10}\DIFaddFL{5}} & \textbf{R@\DIFdelFL{10}\DIFaddFL{5}} & \textbf{MRR} & \textbf{Memoria utilizada} \\
 \midrule
-Índice FAISS crudo (\textit{float32}) & 0,113 & 0,451 & 0,451 & 3,50\,GB \\
-Índice TurboVec Cuantizado (4-bit) & 0,111 & 0,447 & 0,456 & 232,6\,MB \\
+Índice FAISS crudo (\textit{float32}) & \DIFdelFL{0,113}\DIFaddFL{0,176} & \DIFdelFL{0,451}\DIFaddFL{0,370} & \DIFdelFL{0,451}\DIFaddFL{0,445} & 3,50\,GB \\
+Índice TurboVec Cuantizado (4-bit) & \DIFdelFL{0,111}\DIFaddFL{0,174} & \DIFdelFL{0,447}\DIFaddFL{0,366} & \DIFdelFL{0,456}\DIFaddFL{0,449} & 232,6\,MB \\
 \midrule
 \multicolumn{4}{l}{\textit{Mejora de uso de memoria}} & \textbf{--93,4\,\%} \\
 \bottomrule
 \end{tabularx}
-\caption{Comparativa de recursos semánticos (50 \textit{queries}, $k=10$). En la ejecución documentada, TurboVec redujo memoria de forma drástica. FAISS mantuvo menor latencia media en este benchmark de búsqueda persistida (54,0 vs. 77,3\,ms/consulta).}
+\caption{Comparativa de recursos semánticos (50 \textit{queries}, $k=\DIFdelFL{10}\DIFaddFL{5}$). En la ejecución documentada, TurboVec redujo memoria de forma drástica. FAISS mantuvo menor latencia media en este benchmark de búsqueda persistida (54,0 vs. 77,3\,ms/consulta).}
 \end{table}
 
 \begin{center}
@@ -568,18 +712,24 @@ Escalar a millones de documentos presenta una barrera física: los vectores \tex
 \end{tikzpicture}
 \end{center}
 
-TurboVec retiene el desempeño semántico casi a la perfección (caída de \textit{Recall@10} inferior a medio punto) y reduce la memoria utilizada por los vectores de 3,50\,GB a 232,6\,MB ($-$93,4\,\%). Extrapolado a colecciones mayores, este factor de compresión es clave para desplegar el asistente en ordenadores convencionales.
+TurboVec retiene el desempeño semántico casi a la perfección (caída de \textit{Recall@5} inferior a medio punto) y reduce la memoria utilizada por los vectores de 3,50\,GB a 232,6\,MB ($-$93,4\,\%). Extrapolado a colecciones mayores, este factor de compresión es clave para desplegar el asistente en ordenadores convencionales.
 
 \FloatBarrier
 
 \section{Comparativa de Técnicas Semánticas}
 
-Una vez explicadas las dos optimizaciones principales, se separan dos preguntas distintas. La primera es de \textbf{latencia}: FAISS Flat frente a FAISS HNSW en búsqueda semántica pura. La segunda es de \textbf{memoria}: FAISS \textit{float32} frente a TurboVec cuantizado. Mezclar ambas en una única gráfica puede llevar a conclusiones confusas, porque TurboVec se evalúa principalmente por compresión y HNSW por tiempo de búsqueda.
+Una vez explicadas las dos optimizaciones principales, se comparó el tiempo de búsqueda puramente semántica (excluyendo BM25) para las tres arquitecturas indexadas implementadas en el proyecto: FAISS exacto, FAISS HNSW y TurboVec cuantizado.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{scaling_techniques_plot.pdf}
+    \caption{Escalabilidad de latencia por arquitectura semántica (FAISS Exacto vs FAISS HNSW vs TurboVec Cuantizado).}
+\end{figure}
 
 La comparativa muestra dos estrategias complementarias:
 \begin{itemize}
-    \item \textbf{FAISS HNSW:} reduce de forma extrema la latencia de búsqueda al sustituir el escaneo exhaustivo por navegación aproximada en un grafo. En el benchmark corregido pasa de 59,579 ms a 0,434 ms por consulta sobre 1,14M vectores.
-    \item \textbf{TurboVec Cuantizado (4 bits):} reduce de forma drástica la memoria persistida de los vectores y mantiene una calidad semántica muy parecida a FAISS exacto. Es la opción más adecuada cuando la limitación principal es almacenamiento o RAM, no necesariamente latencia.
+    \item \textbf{FAISS HNSW:} reduce de forma extrema la latencia de búsqueda al sustituir el escaneo exhaustivo por navegación aproximada en un grafo. \DIFdelbegin \DIFdel{Es la opción más adecuada cuando la prioridad es responder rápido}\DIFdelend \DIFaddbegin \DIFadd{En el benchmark corregido pasa de 59,579 ms a 0,434 ms por consulta sobre 1,14M vectores}\DIFaddend .
+    \item \textbf{TurboVec Cuantizado (4 bits):} reduce de forma drástica la memoria persistida de los vectores y mantiene una calidad semántica muy parecida a FAISS exacto. Es la opción más adecuada cuando la limitación principal es almacenamiento o RAM\DIFaddbegin \DIFadd{, no necesariamente latencia}\DIFaddend .
 \end{itemize}
 
 FAISS exacto queda como referencia de calidad y reproducibilidad, HNSW como alternativa de baja latencia y TurboVec como alternativa de baja memoria. Según el escenario de despliegue, estas técnicas pueden elegirse de forma independiente o combinarse con la recuperación léxica BM25 y la fusión RRF del sistema híbrido.
@@ -602,7 +752,7 @@ Las siguientes interacciones fueron generadas desde la interfaz CLI interactiva 
 Tras la muerte de Mahoma en el año 632 comenzó la expansión musulmana y, en un lapso de cien años, los árabes ocuparon Egipto [Fuente 5]. Durante los primeros 300 años el islam fue ganando adeptos hasta convertirse en la religión predominante de la sociedad egipcia [Fuente 1]\ldots
 \end{quote}
 
-\textit{La respuesta es trazable y recupera fragmentos relacionados con el artículo \code{es/33218}. En los reportes IR, sin embargo, los qrels exactos para esta consulta son \code{1452\#22} y \code{33218\#10}; por tanto, este ejemplo ilustra una respuesta cualitativamente coherente, pero no debe presentarse como acierto exacto del ground-truth en la evaluación automática.}
+\textit{La respuesta es trazable y recupera fragmentos \DIFdelbegin \DIFdel{del }\DIFdelend \DIFaddbegin \DIFadd{relacionados con el }\DIFaddend artículo \code{es/33218}\DIFaddbegin \DIFadd{. En los reportes IR, sin embargo}\DIFaddend , \DIFdelbegin \DIFdel{marcado como relevante por }\DIFdelend los qrels \DIFdelbegin \DIFdel{expertos }\DIFdelend \DIFaddbegin \DIFadd{exactos }\DIFaddend para esta consulta \DIFdelbegin \DIFdel{, confirmando la coherencia entre recuperación }\DIFdelend \DIFaddbegin \DIFadd{son \code{1452\#22} }\DIFaddend y \DIFaddbegin \DIFadd{\code{33218\#10}. Por tanto, este ejemplo ilustra una respuesta cualitativamente coherente, pero no debe presentarse como acierto exacto del }\DIFaddend ground-truth \DIFaddbegin \DIFadd{en la evaluación automática}\DIFaddend .}
 \vspace{0.3cm}
 \textbf{Usuario:} \textit{¿Qué país formó la primera Infantería de Marina?}
 
@@ -610,11 +760,15 @@ Tras la muerte de Mahoma en el año 632 comenzó la expansión musulmana y, en u
 La primera Infantería de Marina fue creada por Carlos I el 27 de febrero de 1537 al asignar de forma permanente a las escuadras de galeras del Mediterráneo las ``compañías viejas del mar de Nápoles'' [Fuente 1].
 \end{quote}
 
-\textit{El modelo responde con precisión histórica basándose en \code{es/63108\#3}. El conjunto de consultas y qrels queda en \code{data/reports/miracl\_es\_eval.jsonl}; los resultados agregados de evaluación se almacenan en \code{data/reports/doc\_eval\_*.json} y \code{eval\_hnsw\_hybrid*.json}.}
+\textit{El modelo responde con precisión histórica basándose en \code{es/63108\#3}. \DIFdelbegin \DIFdel{La evaluación completa }\DIFdelend \DIFaddbegin \DIFadd{El conjunto de consultas y qrels }\DIFaddend queda en \code{data/reports/miracl\_es\_eval.jsonl}\DIFdelbegin \DIFdel{, con 200 preguntas validadas}\DIFdelend \DIFaddbegin \DIFadd{; los resultados agregados de evaluación se almacenan en \code{data/reports/doc\_eval\_*.json} y \code{eval\_hnsw\_hybrid*.json}}\DIFaddend .}
 
+
+\DIFdelbegin %DIFDELCMD < \newpage
+%DIFDELCMD <
+
+%DIFDELCMD < %%%
+\DIFdelend % ------- Ejemplo 2 -------
 \newpage
-
-% ------- Ejemplo 2 -------
 \subsection{Rechazo Informado (Prevención de Alucinaciones)}
 
 \textbf{Usuario:} \textit{¿Cuál es el horario de apertura del Museo del Prado?}
@@ -623,25 +777,30 @@ La primera Infantería de Marina fue creada por Carlos I el 27 de febrero de 153
 No se puede determinar el horario de apertura del Museo del Prado a partir del contexto proporcionado. Las fuentes ofrecen información sobre la ubicación, historia y obras del museo, pero no incluyen datos sobre sus horarios [Fuente 1, 3, 7].
 \end{quote}
 
-\textit{Se demuestra cómo el prompt conservador (\textit{"No inventes datos"}) reduce el riesgo de alucinación si los documentos recuperados de la Wikipedia no contienen horarios. Si la respuesta no contiene citas explícitas \code{[Fuente N]}, el sistema no muestra fuentes recuperadas solo por similitud.}
+\textit{Se demuestra cómo el prompt \DIFdelbegin \DIFdel{agresivo }\DIFdelend \DIFaddbegin \DIFadd{conservador }\DIFaddend (\textit{"No inventes datos"}) \DIFdelbegin \DIFdel{prohíbe exitosamente al LLM alucinar respuestas }\DIFdelend \DIFaddbegin \DIFadd{reduce el riesgo de alucinación }\DIFaddend si los documentos recuperados de la Wikipedia no contienen horarios. \DIFaddbegin \DIFadd{Si la respuesta no contiene citas explícitas \code{[Fuente N]}, el sistema no muestra fuentes recuperadas solo por similitud.}\DIFaddend }
 
 \vspace{0.3cm}
 \textbf{Usuario:} \textit{¿Cuáles son los hiperparámetros de LangChain usados en el proyecto?}
 
 \begin{quote}
-El contexto proporcionado no contiene información sobre los hiperparámetros utilizados en el proyecto LangChain. Solo describe términos y conceptos relacionados con otros campos, por lo que no es posible responder con evidencia suficiente.
+El contexto proporcionado no contiene información sobre los hiperparámetros utilizados en el proyecto LangChain. Solo describe términos y conceptos relacionados con \DIFdelbegin \DIFdel{diversos camposcomo arquitectura, trazabilidad, tecnología y series de televisión }%DIFDELCMD < [%%%
+\DIFdel{Fuente 1-8}%DIFDELCMD < ]%%%
+\DIFdelend \DIFaddbegin \DIFadd{otros campos, por lo que no es posible responder con evidencia suficiente}\DIFaddend .
 \end{quote}
 
-\textit{El sistema rechaza responder con firmeza. Al buscar sobre LangChain en Wikipedia recupera conceptos técnicos aleatorios, pero al no encontrar la respuesta exacta, el LLM declara explícitamente su ignorancia. Este comportamiento conservador es deseable en un RAG, aunque no constituye una garantía formal de cero alucinaciones.}
+\textit{El sistema rechaza responder con firmeza. Al buscar sobre LangChain en Wikipedia recupera conceptos técnicos aleatorios, pero al no encontrar la respuesta exacta, el LLM declara explícitamente su ignorancia. Este comportamiento \DIFdelbegin \DIFdel{de \textbf{cero-alucinación} }\DIFdelend \DIFaddbegin \DIFadd{conservador }\DIFaddend es \DIFdelbegin \DIFdel{lo ideal }\DIFdelend \DIFaddbegin \DIFadd{deseable }\DIFaddend en un RAG\DIFaddbegin \DIFadd{, aunque no constituye una garantía formal de cero alucinaciones}\DIFaddend .}
 
-% ------- Ejemplo 3 -------
+\DIFaddbegin
+
+\DIFaddend % ------- Ejemplo 3 -------
 \subsection{Llamada Agencial (Tool Routing)}
 
 \textbf{Usuario:} \textit{¿Qué día es hoy?}
 
 \begin{quote}
-Hoy es \textit{[fecha calculada en ejecución]}.
-\end{quote}
+Hoy es \DIFdelbegin \DIFdel{sábado, 30 de mayo de 2026.
+}\DIFdelend \DIFaddbegin \DIFadd{\textit{[fecha calculada en ejecución]}.
+}\DIFaddend \end{quote}
 
 \textit{El agente no invoca a FAISS ni BM25, ya que deduce que la Wikipedia no contiene la respuesta al día actual, ejecutando el módulo \code{DateTool} internamente.}
 
@@ -655,86 +814,47 @@ Revolución Industrial. La industria textil también fue la primera en utilizar 
 
 \textit{Al detectar el verbo de instrucción (``Resume''), el router desactiva la generación lenta del LLM y ejecuta la herramienta \code{SummaryTool}, que recupera el documento con FAISS y le aplica el algoritmo extractivo clásico \code{TextRank} basado en grafos.}
 
-\vspace{0.3cm}
-\textbf{Usuario:} \textit{Busca en internet el precio actual del oro}
+\DIFaddbegin \vspace{0.3cm}
+\DIFadd{\textbf{Usuario:} \textit{Busca en internet el precio actual del oro}
+}
 
 \begin{quote}
-El agente selecciona \code{web}, recupera contexto local si existe, consulta DuckDuckGo y responde usando los snippets externos disponibles. Las evidencias web se citan como \code{[Web N]} cuando han sido usadas explícitamente.
+\DIFadd{\textit{[Respuesta web y síntesis local]}\\
+El precio actual del oro es una cotización en tiempo real que varía constantemente (...)\\
+\textbf{Información sobre el Precio Actual (Web):} Diversas fuentes web permiten consultar el precio del oro en tiempo real (...) en euros, dólares (...) [Web 1], [Web 2].\\
+\textbf{Contexto Histórico del Valor del Oro (Corpus Local):} El corpus local proporciona información sobre cómo se ha valorado el oro en diferentes épocas (...) [Fuente 1], [Fuente 2], [Fuente 7], [Fuente 8].
+}
 \end{quote}
 
-\textit{La herramienta web permite responder sobre información reciente o externa al subconjunto local de Wikipedia, pero no descarga páginas completas: usa títulos, URLs y fragmentos devueltos por DuckDuckGo. Por ello su cobertura depende de la red y de la calidad del snippet.}
+\DIFadd{\textit{La herramienta web permite responder sobre información reciente o externa al subconjunto local de Wikipedia, pero no descarga páginas completas: usa títulos, URLs y fragmentos devueltos por DuckDuckGo. Por ello su cobertura depende de la red y de la calidad del snippet. Además, combina inteligentemente el contexto en vivo con el conocimiento local.}
+}
 
-\newpage
-
-%% =========================================================================
-\section{Auditoría Técnica del Código}
-%% =========================================================================
-
-Tras revisar los módulos principales del sistema (CLI, router agencial, herramientas, recuperación, evaluación, tópicos, LLM y utilidades), no se han detectado errores bloqueantes en las rutas cubiertas por tests unitarios. Sí existen limitaciones y riesgos técnicos que conviene documentar para interpretar correctamente el sistema.
-
-\subsection{Verificaciones ejecutadas}
-
-\begin{itemize}
-  \item \textbf{Tests unitarios sin FAISS:} se ejecutaron los tests de router, herramientas, utilidades de texto, \textit{chunking} y RRF: 31 tests superados. Cubre \textit{streaming}, filtrado de fuentes, resumen extractivo y fusión RRF.
-  \item \textbf{Lint:} \code{ruff check .}: sin errores.
-  \item \textbf{Suite completa:} \code{PYTHONPATH=src pytest}: no puede recogerse en el intérprete actual porque falta \code{faiss} al importar \code{wikirag\_es.indexing.vector\_store}.
-  \item \textbf{Reportes JSON:} las métricas de IR, HNSW, escalabilidad y TurboVec del informe se contrastaron contra \code{data/reports/*.json}.
-\end{itemize}
-
-No se regeneraron benchmarks pesados porque el entorno activo no contiene \code{faiss-cpu}, \code{bertopic} ni \code{turbovec}. En su lugar se verificaron los reportes persistidos ya generados. Esta decisión evita crear artefactos nuevos y respeta que la documentación final se concentre en este fichero.
-
-\subsection{Hallazgos y riesgos no bloqueantes}
-
-\begin{center}
-\small
-\rowcolors{2}{tabheader!40}{white}
-\begin{longtable}{p{0.18\textwidth} p{0.31\textwidth} p{0.42\textwidth}}
-\caption{Auditoría de bugs, conexiones y errores conceptuales.}\\
-\toprule
-\rowcolor{tabheader} \textbf{Severidad} & \textbf{Hallazgo} & \textbf{Impacto y estado} \\
-\midrule
-\endfirsthead
-\toprule
-\rowcolor{tabheader} \textbf{Severidad} & \textbf{Hallazgo} & \textbf{Impacto y estado} \\
-\midrule
-\endhead
-Alta & Dependencia de artefactos de índice confiables & \code{HybridIndex.load} usa \code{pickle.load} para BM25 y \code{faiss.read\_index} para FAISS. Es correcto para índices propios, pero no debe ejecutarse sobre índices no confiables. Riesgo documentado; no bloquea la entrega local. \\
-Alta & Evaluación local no equivale a MIRACL completo & \code{acquire\_miracl\_spanish} construye qrels locales solo para documentos relevantes incluidos en el subconjunto. Las métricas sirven para comparar variantes internas, no para declarar un resultado oficial en MIRACL-es completo. \\
-Media-Alta & \code{--turbovec} no es híbrido & \code{TurboVecIndex} implementa búsqueda semántica, pero no \code{lexical\_search}; por tanto, \code{HybridRetriever} omite BM25 y ejecuta solo semántica rápida/cuantizada. El README ya lo advierte y el informe lo deja explícito. \\
-Media & Trazabilidad dependiente de citas explícitas & Las fuentes se listan únicamente si la respuesta contiene \code{[Fuente N]} o \code{[Web N]}. Esto evita fuentes espurias en respuestas negativas, pero si el LLM omite una cita válida no se mostrará la fuente. \\
-Media & Web externa no reproducible al 100\,\% & \code{WebSearchTool} usa DuckDuckGo HTML sin API key. Depende de red, cambios de HTML, snippets y ranking externo. Es útil para actualidad, pero no sustituye un índice web controlado. \\
-Media & Defensa de prompt injection básica & Se filtran patrones evidentes en documentos y snippets, y el prompt del sistema ordena no obedecer instrucciones recuperadas. No es una defensa completa ante inyecciones reformuladas. \\
-Media & Errores finales de Ollama no encapsulados & El router cae a RAG si falla la decisión LLM, pero una caída de Ollama durante la generación final puede abortar \code{chat/ask}. Es un riesgo operativo, no conceptual. \\
-Baja-Media & Parser del router por fallback textual & Si el LLM no devuelve JSON, el parser busca nombres de herramienta en texto plano. Está mitigado por prompt JSON, rutas deterministas y fallback a RAG, pero puede elegir mal en salidas muy ruidosas. \\
-Baja-Media & Tópicos con fallback silencioso & En modo \code{auto}, si BERTopic falla se usa NMF. Es práctico, pero puede ocultar la causa real del fallo si se necesita trazabilidad estricta del modelado. \\
-\bottomrule
-\end{longtable}
-\end{center}
-
-\subsection{Estado final del pipeline conversacional}
-
-El pipeline actual queda conceptualmente consistente: las rutas deterministas evitan llamadas LLM innecesarias; el router LLM se reserva para consultas ambiguas; el resumen es extractivo real; las respuestas generativas usan \textit{streaming}; y las fuentes no citadas ya no se muestran. El mayor coste interactivo sigue estando en dos puntos: BM25 sobre 1,14M \textit{chunks} en Python puro y la inferencia local de \code{gemma4:e4b} cuando recibe contexto largo.
-
-\newpage
+\DIFaddend \newpage
 
 %% =========================================================================
-\section{Discusión y Limitaciones Conocidas}
+\DIFaddbegin
+
+
+%DIF > % =========================================================================
+\DIFaddend \section{Discusión y Limitaciones Conocidas}
 %% =========================================================================
 
 \begin{enumerate}
   \item \textbf{Cobertura parcial de Wikipedia:} El experimento documentado se ejecutó sobre 1\,000\,000 documentos MIRACL-es, un subconjunto amplio pero todavía inferior a los 10,4 millones disponibles en la colección completa. Si el usuario pregunta por un artículo que no está en el subconjunto, el motor recuperará el documento más similar posible y el LLM deberá declarar falta de información cuando el contexto no baste.
   \item \textbf{Límites de memoria del Motor Léxico (OOM):} \code{rank-bm25} instancia las frecuencias léxicas directamente en RAM, por lo que la búsqueda léxica no escala de forma indefinida. A escala de decenas de millones de documentos se requeriría un motor invertido en disco (p.\,ej. Elasticsearch/Lucene).
-  \item \textbf{Cuello de botella en la latencia híbrida (BM25):} A pesar de utilizar índices vectoriales rápidos como HNSW, la latencia total por consulta del recuperador híbrido alcanza 3.520 ms en el benchmark de 1\,140\,063 \textit{chunks}. Esto se debe a que la fusión RRF espera tanto la parte semántica como la búsqueda léxica BM25, ejecutada en Python puro. En cambio, la búsqueda semántica aislada con HNSW queda por debajo de 1 ms en el benchmark documentado; FAISS Flat y TurboVec se mueven en decenas de ms.
-  \item \textbf{Latencia de inferencia del LLM local:} La interacción completa del chat añade el coste de procesar el contexto inyectado y generar la respuesta con \code{gemma4:e4b}. El \textit{streaming} mejora la percepción de latencia porque muestra tokens conforme llegan, pero no elimina el coste total de inferencia.
-  \item \textbf{Agente web basado en snippets:} \code{WebSearchTool} permite responder sobre información reciente o fuera del corpus local, pero usa únicamente títulos, URLs y fragmentos de DuckDuckGo. No descarga ni verifica el contenido completo de las páginas, de modo que la respuesta depende de la calidad del snippet.
-  \item \textbf{Seguridad de índices locales:} Los índices entregados deben considerarse artefactos de confianza del proyecto. No se debe cargar un directorio de índice de origen desconocido porque BM25 se serializa con \code{pickle} y FAISS carga estructuras nativas desde disco.
+  \item \textbf{Cuello de botella en la latencia \DIFdelbegin \DIFdel{Híbrida }\DIFdelend \DIFaddbegin \DIFadd{híbrida }\DIFaddend (BM25):} A pesar de utilizar índices \DIFdelbegin \DIFdel{ultrarrápidos como HNSW(FAISS) o TurboVec para la búsqueda semántica}\DIFdelend \DIFaddbegin \DIFadd{vectoriales rápidos como HNSW}\DIFaddend , la latencia total por consulta del \DIFdelbegin \DIFdel{agente en modo }\DIFdelend \DIFaddbegin \DIFadd{recuperador }\DIFaddend híbrido \DIFdelbegin \DIFdel{ronda los 4 segundos}\DIFdelend \DIFaddbegin \DIFadd{alcanza 3.520 ms en el benchmark de 1\,140\,063 \textit{chunks}}\DIFaddend . Esto se debe a que \DIFdelbegin \DIFdel{siempre se debe esperar a los resultados de }\DIFdelend \DIFaddbegin \DIFadd{la fusión RRF espera tanto la parte semántica como }\DIFaddend la búsqueda léxica \DIFdelbegin \DIFdel{(}\DIFdelend BM25\DIFdelbegin \DIFdel{), la cual tarda casi 4 segundos en iterar sobre 1.14 millones de documentos }\DIFdelend \DIFaddbegin \DIFadd{, ejecutada }\DIFaddend en Python puro. \DIFdelbegin \DIFdel{La lentitud general observada no es atribuible a los modelos vectoriales aproximados o cuantizados (que resuelven en $\sim$}\DIFdelend \DIFaddbegin \DIFadd{En cambio, la búsqueda semántica aislada con HNSW queda por debajo de }\DIFaddend 1 \DIFdelbegin \DIFdel{\,ms), sino a la etapa léxica obligatoria para la fusión RRF.
+  }\DIFdelend \DIFaddbegin \DIFadd{ms en el benchmark documentado. FAISS Flat y TurboVec se mueven en decenas de ms.
+  }\DIFaddend \item \DIFdelbegin \DIFdel{\textbf{Latencia de Inferencia del LLM Local:} Independientemente de la velocidad de recuperación de documentos (que se resuelve en milisegundos usando FAISS o TurboVec ), la }\DIFdelend \DIFaddbegin \DIFadd{\textbf{Latencia de inferencia del LLM local:} La }\DIFaddend interacción completa del chat añade \DIFdelbegin \DIFdel{una latencia significativa de entre 30 y 50 segundos. Este cuello de botella no radica en la recuperación de información, sino en el procesamiento del contexto inyectado (miles de tokens extraídos de los documentos de Wikipedia) y la subsiguiente generación de la respuesta elaborada palabra por palabra por parte del modelo \code{gemma4:e4b} ejecutado en un ordenador normal}\DIFdelend \DIFaddbegin \DIFadd{el coste de procesar el contexto inyectado y generar la respuesta con \code{gemma4:e4b}. El \textit{streaming} mejora la percepción de latencia porque muestra tokens conforme llegan, pero no elimina el coste total de inferencia.
+  }\item \DIFadd{\textbf{Agente web basado en snippets:} \code{WebSearchTool} permite responder sobre información reciente o fuera del corpus local, pero usa únicamente títulos, URLs y fragmentos de DuckDuckGo. No descarga ni verifica el contenido completo de las páginas, de modo que la respuesta depende de la calidad del snippet.
+  }\item \DIFadd{\textbf{Seguridad de índices locales:} Los índices entregados deben considerarse artefactos de confianza del proyecto. No se debe cargar un directorio de índice de origen desconocido porque BM25 se serializa con \code{pickle} y FAISS carga estructuras nativas desde disco}\DIFaddend .
 \end{enumerate}
 
 %% =========================================================================
 \section{Conclusiones}
 %% =========================================================================
 
-El sistema desarrollado es un asistente documental funcional que integra embeddings, tópicos, resumen extractivo, LLM, RAG y agentes. A través de pruebas, se comprobó que la Recuperación Aumentada (RAG) depende críticamente de la calidad del recuperador y de la trazabilidad de las fuentes. Gracias a la compresión vectorial (TurboVec), la carga parcial de índices, el \textit{streaming} de respuestas y el enrutamiento agencial se obtiene un sistema más eficiente y usable sin sacrificar demasiada precisión. La auditoría final no detecta errores bloqueantes en las rutas cubiertas por tests, pero deja documentados los límites de reproducibilidad, seguridad de artefactos, web externa y evaluación local.
+El sistema desarrollado \DIFdelbegin \DIFdel{en }\DIFdelend \DIFaddbegin \DIFadd{es }\DIFaddend un asistente documental funcional que integra embeddings, tópicos, resumen extractivo, LLM, RAG y agentes. A través de pruebas, se comprobó que la Recuperación Aumentada (RAG) depende críticamente de la calidad del recuperador y de la trazabilidad de las fuentes. Gracias a la compresión vectorial (TurboVec), la carga parcial de índices\DIFaddbegin \DIFadd{, el \textit{streaming} de respuestas }\DIFaddend y el enrutamiento agencial \DIFdelbegin \DIFdel{nos permiten tener }\DIFdelend \DIFaddbegin \DIFadd{se obtiene }\DIFaddend un sistema más eficiente \DIFaddbegin \DIFadd{y usable }\DIFaddend sin sacrificar demasiada precisión. \DIFaddbegin \DIFadd{La revisión final no detecta errores bloqueantes en las rutas cubiertas por tests, pero deja documentados los límites de reproducibilidad, seguridad de artefactos, web externa y evaluación local.
+}\DIFaddend
 
 \newpage
 \appendix
@@ -773,5 +893,18 @@ PYTHONPATH=src wikirag chat \
   --index-dir data/indexes/default \
   --topics-report data/reports/topics.json
 \end{verbatim}
+\DIFaddbegin
+
+%DIF > % =========================================================================
+\section*{\DIFadd{C. Mejoras y Correcciones de Código}}
+%DIF > % =========================================================================
+
+\begin{itemize}
+    \item \DIFadd{\textbf{Enrutamiento y Herramienta Web (\code{router.py}):} Se han ampliado las expresiones regulares deterministas para capturar adecuadamente intenciones de búsqueda externa (p.\,ej. \textit{«busca en internet»}, \textit{«actualidad»}). Además, se ha afinado la reescritura de la memoria conversacional para que el sistema mantenga mejor el estado entre llamadas a herramientas sin corromper las búsquedas con palabras instruccionales irrelevantes.
+    }\item \DIFadd{\textbf{Filtrado de Fuentes y Citas (\code{router.py}):} Se ha implementado el método \textit{filter by citations} para evitar presentar al usuario referencias que el LLM no haya citado explícitamente mediante el formato \code{[Fuente N]} o \code{[Web N]}, mitigando asociaciones espurias.
+    }\item \DIFadd{\textbf{Streaming Interactivo (\code{llm/base.py}, \code{llm/ollama.py}, \code{cli/main.py}):} Se ha reescrito el cliente \code{OllamaClient} añadiendo soporte iterativo nativo (\code{stream\_generate}). Gracias a un \textit{callback} en el \code{CLI}, las respuestas ahora se imprimen progresivamente en pantalla, disminuyendo de forma significativa el \textit{Time To First Token} (TTFT) percibido por el usuario en respuestas generativas largas.
+    }\item \DIFadd{\textbf{Pureza del Resumen Extractivo (\code{tools.py}):} Se añadió la rutina \textit{extract plain context text} para quitar el contexto RAG de etiquetas artificiales (\code{Texto:}, \code{Ruta:}, etc.) antes de ejecutar los grafos de TextRank, asegurando que el resumen extractivo no se contamine con los metadatos internos.
+}\end{itemize}
+\DIFaddend
 
 \end{document}
